@@ -41,7 +41,7 @@
       <span data-t="navVeggies">Vegetales</span>
     </div>
   </div>
-      
+     
     </div>
   </div>
 </div>
@@ -74,6 +74,21 @@
     <div class="fr" id="QFR">
       <label data-t="quantity">Cantidad</label>
       <input type="number" id="FQ" min="1" max="20" value="1" style="width:100%;background:var(--inp);border:1.5px solid var(--inpb);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--txt);outline:none;font-family:inherit">
+    </div>
+    <div class="fr" id="SZR">
+      <label id="SZL">Tamaño en jardín</label>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="number" id="FSW" min="0.1" max="999" step="0.1" value="1" style="min-width:0;flex:1;background:var(--inp);border:1.5px solid var(--inpb);border-radius:10px;padding:10px 4px;font-size:14px;color:var(--txt);outline:none;font-family:inherit;text-align:center">
+        <span style="color:var(--txt3);font-size:14px;font-weight:600;flex-shrink:0">×</span>
+        <input type="number" id="FSH" min="0.1" max="999" step="0.1" value="1" style="min-width:0;flex:1;background:var(--inp);border:1.5px solid var(--inpb);border-radius:10px;padding:10px 4px;font-size:14px;color:var(--txt);outline:none;font-family:inherit;text-align:center">
+        <select id="FSU" style="flex-shrink:0;width:46px;background:#183a10;color:#a8d47a;border:1.5px solid #4a8a30;border-radius:10px;padding:10px 2px;font-size:11px;font-weight:700;outline:none;font-family:inherit;cursor:pointer;text-align:center">
+          <option value="ft">ft</option>
+          <option value="in">in</option>
+          <option value="m">m</option>
+          <option value="cm">cm</option>
+        </select>
+      </div>
+      <div id="SZP" style="margin-top:5px;font-size:10px;color:var(--txt3)"></div>
     </div>
     <div class="fr" id="WFR">
       <label data-t="waterFreq">Riego</label>

@@ -8,7 +8,7 @@ let notificationsEnabled=false,weatherEnabled=false,rotationEnabled=false;
 let weatherData=null,rotationHistory={};
 
 // traducciones español/inglés
-const TX={en:{myGarden:'Mi Huerto',myPatch:'My Garden',planted:'Planted',active:'active',savedToGrow:'Saved to grow',navGarden:'Mi Huerto',navPatch:'Garden',navCal:'Calendar',navVeggies:'Veggies',patchDim:'Patch dimensions',width:'Width',length:'Length',unit:'Unit',pestGuardLbl:'Pest guard',commonPests:'Common pests',tapCellHint:'Tap plant to edit/remove.',addPlantTitle:'Add plant',choosePlant:'Choose a plant',fillDetails:'Fill details',datePlanted:'Date planted',quantity:'Quantity',waterFreq:'Watering',sunlight:'Sunlight',feedSched:'Fertilising',notesLbl:'Notes',nw:'Needs Watering',od:'⚠ Water Overdue',tw:'Tap 💧 to log',wn:'Watered just now',nm:'Night mode',dm:'Day mode',qty:'in patch',notifications:'Notifications',weather:'Weather',rotation:'Crop Rotation',enableNotif:'Enable watering reminders',enableWeather:'Show PR weather',enableRotation:'Track crop rotation'},es:{myGarden:'Mi Huerto',myPatch:'Mi Jardín',planted:'Plantados',active:'activos',savedToGrow:'Guardados',navGarden:'Mi Huerto',navPatch:'Jardín',navCal:'Calendario',navVeggies:'Vegetales',patchDim:'Dimensiones',width:'Ancho',length:'Largo',unit:'Unidad',pestGuardLbl:'Guardianas',commonPests:'Plagas comunes',tapCellHint:'Toca planta para editar/eliminar.',addPlantTitle:'Añadir planta',choosePlant:'Escoge planta',fillDetails:'Completa datos',datePlanted:'Fecha siembra',quantity:'Cantidad',waterFreq:'Riego',sunlight:'Luz solar',feedSched:'Fertilización',notesLbl:'Notas',nw:'Necesita agua',od:'⚠ Riego atrasado',tw:'Toca 💧',wn:'Regado ahora',nm:'Modo noche',dm:'Modo día',qty:'en jardín',notifications:'Notificaciones',weather:'Clima',rotation:'Rotación de Cultivos',enableNotif:'Activar recordatorios de riego',enableWeather:'Mostrar clima PR',enableRotation:'Rastrear rotación'}};
+const TX={en:{myGarden:'Mi Huerto',myPatch:'My Garden',planted:'Planted',active:'active',savedToGrow:'Saved to grow',navGarden:'Mi Huerto',navPatch:'Garden',navCal:'Calendar',navVeggies:'Veggies',patchDim:'Patch dimensions',width:'Width',length:'Length',unit:'Unit',pestGuardLbl:'Pest guard',commonPests:'Common pests',tapCellHint:'Tap plant to edit/remove.',addPlantTitle:'Add plant',choosePlant:'Choose a plant',fillDetails:'Fill details',datePlanted:'Date planted',quantity:'Quantity',waterFreq:'Watering',sunlight:'Sunlight',feedSched:'Fertilising',notesLbl:'Notes',nw:'Needs Watering',od:'⚠ Water Overdue',tw:'Tap 💧 to log',wn:'Watered just now',nm:'Night mode',dm:'Day mode',qty:'in patch',notifications:'Notifications',weather:'Weather',rotation:'Crop Rotation',enableNotif:'Enable watering reminders',enableWeather:'Show PR weather',enableRotation:'Track crop rotation',plantSize:'Garden size (cells)'},es:{myGarden:'Mi Huerto',myPatch:'Mi Jardín',planted:'Plantados',active:'activos',savedToGrow:'Guardados',navGarden:'Mi Huerto',navPatch:'Jardín',navCal:'Calendario',navVeggies:'Vegetales',patchDim:'Dimensiones',width:'Ancho',length:'Largo',unit:'Unidad',pestGuardLbl:'Guardianas',commonPests:'Plagas comunes',tapCellHint:'Toca planta para editar/eliminar.',addPlantTitle:'Añadir planta',choosePlant:'Escoge planta',fillDetails:'Completa datos',datePlanted:'Fecha siembra',quantity:'Cantidad',waterFreq:'Riego',sunlight:'Luz solar',feedSched:'Fertilización',notesLbl:'Notas',nw:'Necesita agua',od:'⚠ Riego atrasado',tw:'Toca 💧',wn:'Regado ahora',nm:'Modo noche',dm:'Modo día',qty:'en jardín',notifications:'Notificaciones',weather:'Clima',rotation:'Rotación de Cultivos',enableNotif:'Activar recordatorios de riego',enableWeather:'Mostrar clima PR',enableRotation:'Rastrear rotación',plantSize:'Tamaño en jardín (celdas)'}};
 function tx(k){return(iS?TX.es:TX.en)[k]||k;}
 function aTx(){document.querySelectorAll('[data-t]').forEach(e=>{e.textContent=tx(e.dataset.t);});}
 
@@ -16,6 +16,34 @@ const P={}; // plantas en el jardín
 let SV={}; // plantas guardadas/favoritas
 let pG=Array.from({length:gR},()=>Array(gC).fill(null)); // cuadrícula del jardín
 let pQueue=[]; // cola de plantas pendientes por colocar
+
+// estas funciones van arriba porque loadData() las necesita al iniciar
+function gUF(){return cU==='m'?0.01:cU==='ft'?0.03281:cU==='in'?0.3937:1;}
+function toСm(v){return cU==='m'?v*100:cU==='ft'?v*30.48:cU==='in'?v*2.54:v;}
+
+function niceSizes(){
+  if(cU==='ft') return [1,2,3,4,5,6,8,10];
+  if(cU==='in') return [6,12,18,24,36,48];
+  if(cU==='m')  return [0.5,1,1.5,2,3,4,5];
+  return [30,50,60,100,150,200]; // cm
+}
+
+function getNiceCellSize(shortSideCm){
+  const shortUnit=shortSideCm*gUF();
+  const sizes=niceSizes();
+  let best=sizes[0],bestScore=Infinity;
+  for(const s of sizes){
+    const cells=shortUnit/s;
+    if(cells<2)continue;
+    const score=Math.abs(cells-5);
+    if(score<bestScore){bestScore=score;best=s;}
+  }
+  return best;
+}
+
+function cellSize(){return getNiceCellSize(Math.min(pW,pL));}
+function cellW(){return cellSize();}
+function cellH(){return cellSize();}
 
 // recomendaciones de plantas compañeras
 const PGR={tomato:['basil','marigold'],carrot:['marigold'],lettuce:['basil','marigold'],capsicum:['basil','marigold'],broccoli:['marigold'],cucumber:['marigold'],onion:['basil'],garlic:[],pumpkin:['marigold'],corn:['marigold'],bean:['marigold'],eggplant:['basil','marigold'],chilli:['basil'],potato:['marigold']};
@@ -88,7 +116,7 @@ function saveData(){
     localStorage.setItem('huertoPlants',JSON.stringify(P));
     localStorage.setItem('huertoGrid',JSON.stringify(pG));
     localStorage.setItem('huertoSaved',JSON.stringify(SV));
-    localStorage.setItem('huertoDim',JSON.stringify({pW,pL,gC,gR,cU}));
+    localStorage.setItem('huertoDim',JSON.stringify({pW,pL,cU}));
     localStorage.setItem('huertoSettings',JSON.stringify({iS,iN,tC,notificationsEnabled,weatherEnabled,rotationEnabled}));
     localStorage.setItem('huertoRotation',JSON.stringify(rotationHistory));
   }catch(e){console.error('Save failed:',e);}
@@ -100,16 +128,31 @@ function loadData(){
     const dim=localStorage.getItem('huertoDim');
     if(dim){
       const d=JSON.parse(dim);
-      pW=d.pW||200;pL=d.pL||300;gC=d.gC||6;gR=d.gR||5;cU=d.cU||'cm';
-      // reconstruir la cuadrícula con las dimensiones correctas
-      pG=Array.from({length:gR},()=>Array(gC).fill(null));
+      pW=d.pW||Math.round(10*30.48);
+      pL=d.pL||Math.round(10*30.48);
+      cU=d.cU||'ft';
+      // siempre recalcular gC/gR desde las dimensiones — no confiar en valores guardados
+      const cs=getNiceCellSize(Math.min(pW,pL));
+      const csCm=cs/gUF();
+      gC=Math.max(2,Math.min(12,Math.round(pW/csCm)));
+      gR=Math.max(2,Math.min(12,Math.round(pL/csCm)));
     }
     
     const plants=localStorage.getItem('huertoPlants');
     if(plants)Object.assign(P,JSON.parse(plants));
     
     const grid=localStorage.getItem('huertoGrid');
-    if(grid)pG=JSON.parse(grid);
+    if(grid){
+      const parsed=JSON.parse(grid);
+      // convertir formato viejo (string) a arrays
+      pG=parsed.map(row=>row.map(cell=>{
+        if(!cell||cell.length===0)return [];
+        if(typeof cell==='string')return [cell]; // compatibilidad con versión anterior
+        return cell;
+      }));
+    }else{
+      pG=Array.from({length:gR},()=>Array(gC).fill(null).map(()=>[]));
+    }
     
     const saved=localStorage.getItem('huertoSaved');
     if(saved)SV=JSON.parse(saved);
@@ -137,7 +180,9 @@ function loadData(){
     const idsInGrid=new Set();
     for(let r=0;r<gR;r++){
       for(let c=0;c<gC;c++){
-        if(pG[r]&&pG[r][c])idsInGrid.add(pG[r][c]);
+        const cell=pG[r]&&pG[r][c];
+        if(Array.isArray(cell))cell.forEach(id=>idsInGrid.add(id));
+        else if(cell)idsInGrid.add(cell);
       }
     }
     Object.keys(P).forEach(id=>{
@@ -528,17 +573,22 @@ function ODC(){
   pW=Math.round(toСm(w));
   pL=Math.round(toСm(l));
   
-  const cs=Math.max(25,Math.round(Math.min(pW,pL)/6));
-  const newGC=Math.max(2,Math.min(10,Math.round(pW/cs)));
-  const newGR=Math.max(2,Math.min(8,Math.round(pL/cs)));
+  // celda cuadrada con tamaño limpio (ej: 5ft, 10ft, no 8.3ft)
+  const cs=getNiceCellSize(Math.min(pW,pL)); // tamaño en unidad actual
+  const csCm=cs/gUF(); // convertir a cm para dividir dimensiones internas
+  const newGC=Math.max(2,Math.min(12,Math.round(pW/csCm)));
+  const newGR=Math.max(2,Math.min(12,Math.round(pL/csCm)));
   
   // guardar plantas actuales con sus posiciones
   const currentPlants=[];
+  const seenIds=new Set();
   for(let r=0;r<gR;r++){
     for(let c=0;c<gC;c++){
-      if(pG[r]&&pG[r][c]){
-        currentPlants.push({id:pG[r][c],r,c});
-      }
+      const cell=pG[r]&&pG[r][c];
+      const ids=Array.isArray(cell)?cell:(cell?[cell]:[]);
+      ids.forEach(id=>{
+        if(!seenIds.has(id)){seenIds.add(id);currentPlants.push({id,r,c});}
+      });
     }
   }
   
@@ -552,14 +602,14 @@ function ODC(){
   // restaurar plantas que caben en la cuadrícula nueva
   currentPlants.forEach(({id,r,c})=>{
     if(r<gR&&c<gC){
-      pG[r][c]=id;
+      if(!pG[r][c])pG[r][c]=[];
+      if(!pG[r][c].includes(id))pG[r][c].push(id);
     }else{
-      // la planta no cabe en la cuadrícula nueva, se elimina
       delete P[id];
     }
   });
   
-  document.getElementById('GI').textContent=`Cuadrícula: ${gC} × ${gR}`;
+  document.getElementById('GI').textContent=`Cuadrícula: ${gC} × ${gR} · celda: ${cs}${cU}`;
   saveData();
   bP();
 }
@@ -569,38 +619,51 @@ function bP(){
   const gc=document.getElementById('GV'),cg=document.getElementById('CG');
   if(!gc||!cg)return;
   
-  cg.style.gridTemplateColumns=`repeat(${gC},1fr)`;
-  cg.style.gridTemplateRows=`repeat(${gR},1fr)`;
-  document.getElementById('TopR').style.gridTemplateColumns=`repeat(${gC},1fr)`;
+  // tamaño de celda uniforme en píxeles — cuadrada en pantalla
+  const availW=Math.min(360,window.innerWidth-60)-28; // 28px es el ancho de LeftR
+  const cw=Math.floor(availW/gC); // ancho de celda en px
+  const ch=cw; // alto igual al ancho → celdas cuadradas
+  const W=cw*gC;
+  const H=ch*gR;
   
-  const cH=Math.round(48*gR);
-  gc.width=Math.min(360,window.innerWidth-60);
-  gc.height=cH;
-  gc.style.height=cH+'px';
-  cg.style.height=cH+'px';
+  // ajustar canvas y overlay al tamaño exacto
+  gc.width=W;
+  gc.height=H;
+  gc.style.width=W+'px';
+  gc.style.height=H+'px';
+  cg.style.width=W+'px';
+  cg.style.height=H+'px';
+  
+  // usar px fijos en el grid para que coincida pixel a pixel con el canvas
+  cg.style.gridTemplateColumns=`repeat(${gC},${cw}px)`;
+  cg.style.gridTemplateRows=`repeat(${gR},${ch}px)`;
+  document.getElementById('TopR').style.gridTemplateColumns=`repeat(${gC},${cw}px)`;
+  document.getElementById('TopR').style.width=W+'px';
   
   const lr=document.getElementById('LeftR');
   lr.innerHTML='';
   gLL().forEach((t,i)=>{
     const d=document.createElement('div');
-    d.style.cssText=`height:${cH/gR}px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#7caf60;font-weight:600;border-bottom:${i<gR-1?'1px solid rgba(80,160,80,.3)':'none'}`;
+    d.style.cssText=`height:${ch}px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#7caf60;font-weight:600;border-bottom:${i<gR-1?'1px solid rgba(80,160,80,.3)':'none'}`;
     d.textContent=t;
     lr.appendChild(d);
   });
   
-  const ctx=gc.getContext('2d'),W=gc.width,H=gc.height,cw=W/gC,ch=H/gR;
+  const ctx=gc.getContext('2d');
   ctx.fillStyle=iN?'#0a1208':'#f4fff0';
   ctx.fillRect(0,0,W,H);
   
+  // líneas de subdivisión tenues
   ctx.strokeStyle=iN?'rgba(80,160,80,.12)':'rgba(60,160,60,.15)';
   ctx.lineWidth=.5;
   for(let x=cw/4;x<W;x+=cw/4){
-    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(Math.round(x),0);ctx.lineTo(Math.round(x),H);ctx.stroke();
   }
   for(let y=ch/4;y<H;y+=ch/4){
-    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,Math.round(y));ctx.lineTo(W,Math.round(y));ctx.stroke();
   }
   
+  // líneas de cuadrícula principales en píxeles exactos
   ctx.strokeStyle=iN?'rgba(80,160,80,.35)':'rgba(60,160,60,.3)';
   ctx.lineWidth=1;
   for(let i=0;i<=gC;i++){
@@ -618,27 +681,97 @@ function rCG(){
   if(!cg)return;
   cg.innerHTML='';
   
-  for(let r=0;r<gR;r++)
+  for(let r=0;r<gR;r++){
     for(let c=0;c<gC;c++){
-      const ci=pG[r]&&pG[r][c],pl=ci&&P[ci]?P[ci]:null,em=!ci;
-      let bg=em?'transparent':pl&&(pl.tp==='pest'||pl.tp==='flower')?'rgba(200,80,200,.2)':'rgba(80,160,80,.2)';
-      if(pP&&em)bg='rgba(40,100,220,.2)';
+      const cell=pG[r]&&pG[r][c];
+      const ids=Array.isArray(cell)?cell:(cell?[cell]:[]);
+      const plants=ids.map(id=>P[id]).filter(Boolean);
+      const em=plants.length===0;
       
+      let bg='transparent',cursor='default';
+      let bt='none',bb='none',bl='none',br='none';
       const d=document.createElement('div');
-      d.style.cssText=`display:flex;align-items:center;justify-content:center;font-size:16px;background:${bg};cursor:${(!em||pP)?'pointer':'default'};border:${pP&&em?'2px dashed #4080dd':'none'}`;
-      d.textContent=pl?pl.e:'';
-      if(em&&pP)d.onclick=()=>plc(r,c);
-      else if(pl)d.onclick=()=>oEx(pl,r,c);
+      d.style.cssText='display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:1px;position:relative;box-sizing:border-box;';
+      
+      if(em&&pP){
+        // celda vacía en modo de colocación — mostrar si cabe aquí
+        const ppw=pP.pw||1,pph=pP.ph||1;
+        const fits=(r+pph<=gR)&&(c+ppw<=gC);
+        const bc=fits?'#4080dd':'#c04040';
+        bg=fits?'rgba(40,100,220,.18)':'rgba(200,60,60,.1)';
+        bt=bb=bl=br='2px dashed '+bc;
+        cursor='pointer';
+        d.onclick=(()=>{const rr=r,cc=c;return()=>plc(rr,cc);})();
+      }else if(plants.length===1){
+        // celda con una sola planta — dibujar borde del área
+        const pl=plants[0];
+        const aR=pl.anchorR??r, aC=pl.anchorC??c;
+        const pw=pl.pw||1, ph=pl.ph||1;
+        const isPestOrFlower=pl.tp==='pest'||pl.tp==='flower';
+        const borderColor=isPestOrFlower?'#c060c0':'#3a9030';
+        const isTop=r===aR, isBottom=r===aR+ph-1;
+        const isLeft=c===aC, isRight=c===aC+pw-1;
+        const thick='2px solid '+borderColor;
+        bt=isTop?thick:'none';
+        bb=isBottom?thick:'none';
+        bl=isLeft?thick:'none';
+        br=isRight?thick:'none';
+        bg='rgba('+(isPestOrFlower?'200,80,200':'80,160,80')+',.22)';
+        cursor='pointer';
+        // emoji solo en la celda ancla
+        if(r===aR&&c===aC){
+          const em2=document.createElement('span');
+          em2.style.cssText='font-size:18px;line-height:1';
+          em2.textContent=pl.e;
+          d.appendChild(em2);
+          // badge de tamaño si ocupa más de 1 celda
+          if(pw>1||ph>1){
+            const badge=document.createElement('div');
+            badge.style.cssText='position:absolute;bottom:2px;right:2px;font-size:8px;background:rgba(0,0,0,.45);color:#fff;border-radius:3px;padding:1px 4px;font-weight:700';
+            badge.textContent=cellsToUnit(pw,cellSize())+cU+'×'+cellsToUnit(ph,cellSize())+cU;
+            d.appendChild(badge);
+          }
+        }
+        d.onclick=(()=>{const pp=pl;return()=>oEx(pp,pp.anchorR??r,pp.anchorC??c);})();
+      }else if(plants.length>1){
+        // varias plantas en la misma celda — mostrar todas apiladas
+        bg='rgba(80,160,80,.18)';
+        bt=bb=bl=br='1.5px solid rgba(80,160,80,.5)';
+        cursor='pointer';
+        plants.forEach(pl=>{
+          const span=document.createElement('span');
+          span.style.cssText='font-size:'+(plants.length>4?'9':'11')+'px;line-height:1';
+          span.textContent=pl.e;
+          d.appendChild(span);
+        });
+        // badge con conteo
+        const badge=document.createElement('div');
+        badge.style.cssText='position:absolute;top:2px;right:2px;font-size:8px;background:#3a9030;color:#fff;border-radius:3px;padding:1px 4px;font-weight:700';
+        badge.textContent=plants.length;
+        d.appendChild(badge);
+        // al hacer clic mostrar picker de cuál editar
+        d.onclick=(()=>{const rr=r,cc=c,pp=plants;return()=>oExMulti(pp,rr,cc);})();
+      }
+      
+      d.style.background=bg;
+      d.style.cursor=cursor;
+      d.style.borderTop=bt;
+      d.style.borderBottom=bb;
+      d.style.borderLeft=bl;
+      d.style.borderRight=br;
       cg.appendChild(d);
     }
+  }
 }
 
-// factores para convertir cm a la unidad actual
-function gUF(){return cU==='m'?0.01:cU==='ft'?0.03281:cU==='in'?0.3937:1;}
-// convertir unidad actual de vuelta a cm
-function toСm(v){return cU==='m'?v*100:cU==='ft'?v*30.48:cU==='in'?v*2.54:v;}
-function gRL(){return Array.from({length:gC},(_,i)=>Math.round(((i+1)*pW*gUF()/gC)*10)/10+cU);}
-function gLL(){return Array.from({length:gR},(_,i)=>Math.round(((i+1)*pL*gUF()/gR)*10)/10);}
+// tamaño de celda cuadrada en la unidad actual (mismo ancho y alto)
+// convertir dimensión en unidad actual → número de celdas
+function unitToCells(val,cs){return Math.max(1,Math.round(val/cs));}
+// convertir número de celdas → dimensión en unidad actual
+function cellsToUnit(cells,cs){return Math.round(cells*cs*10)/10;}
+// etiquetas de la regla: cada celda = cellSize() → labels limpios
+function gRL(){return Array.from({length:gC},(_,i)=>((i+1)*cellSize())+cU);}
+function gLL(){return Array.from({length:gR},(_,i)=>(i+1)*cellSize());}
 
 function rR(){
   const tr=document.getElementById('TopR');
@@ -794,6 +927,20 @@ function oNw(v){
   const t=new Date(),p2=n=>String(n).padStart(2,'0');
   document.getElementById('FD').value=`${t.getFullYear()}-${p2(t.getMonth()+1)}-${p2(t.getDate())}`;
   document.getElementById('FQ').value='1'; // reiniciar cantidad a 1
+  // mostrar tamaño en la unidad del jardín (1 celda por defecto)
+  const szLabel=document.getElementById('SZL');
+  if(szLabel)szLabel.textContent=(iS?'Tamaño en jardín':'Garden size');
+  // set unit selector to match garden unit
+  const fsuEl=document.getElementById('FSU');
+  if(fsuEl)fsuEl.value=cU;
+  document.getElementById('FSW').value=cellSize();
+  document.getElementById('FSH').value=cellSize();
+  updateSizePreview();
+  // wire up live preview when values change
+  ['FSW','FSH','FSU'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.oninput=updateSizePreview;
+  });
   document.getElementById('FW').selectedIndex=1;
   document.getElementById('FS').selectedIndex=0;
   document.getElementById('FF').selectedIndex=2;
@@ -802,6 +949,7 @@ function oNw(v){
   const isPest=v.tp==='pest'||v.tp==='flower';
   // mostrar/ocultar campo de cantidad
   document.getElementById('QFR').style.display=isPest?'none':'block';
+  document.getElementById('SZR').style.display=isPest?'none':'block';
   document.getElementById('WFR').style.display=isPest?'none':'block';
   document.getElementById('SFR').style.display=isPest?'none':'block';
   document.getElementById('FFR').style.display=isPest?'none':'block';
@@ -829,6 +977,38 @@ function oNw(v){
   document.getElementById('PIM').style.display='flex';
 }
 
+function oExMulti(plants,r,c){
+  // mostrar picker sencillo cuando hay varias plantas en la misma celda
+  const existing=document.getElementById('MULTI_PICK');
+  if(existing)existing.remove();
+  
+  const overlay=document.createElement('div');
+  overlay.id='MULTI_PICK';
+  overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center';
+  
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--modal);border-radius:16px;padding:16px;width:80%;max-width:300px';
+  box.innerHTML='<div style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:12px">'+(iS?'¿Cuál planta?':'Which plant?')+'</div>';
+  
+  plants.forEach(pl=>{
+    const btn=document.createElement('div');
+    btn.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--cb);margin-bottom:8px;cursor:pointer;background:var(--card)';
+    btn.innerHTML='<span style="font-size:22px">'+pl.e+'</span><span style="font-size:13px;color:var(--txt);font-weight:600">'+(iS?(pl.ns||pl.n):pl.n)+'</span>';
+    btn.onclick=()=>{overlay.remove();oEx(pl,r,c);};
+    box.appendChild(btn);
+  });
+  
+  const cancel=document.createElement('div');
+  cancel.style.cssText='text-align:center;padding:8px;font-size:13px;color:var(--txt3);cursor:pointer;margin-top:4px';
+  cancel.textContent=iS?'Cancelar':'Cancel';
+  cancel.onclick=()=>overlay.remove();
+  box.appendChild(cancel);
+  
+  overlay.appendChild(box);
+  overlay.onclick=(e)=>{if(e.target===overlay)overlay.remove();};
+  document.getElementById('app').appendChild(overlay);
+}
+
 function oEx(p,r,c){
   pNP={e:p.e,n:p.n,ns:p.ns,id:p.id,tp:p.tp,r,c,ex:true};
   document.getElementById('PIT').textContent=p.e+' '+(iS?(p.ns||p.n):p.n);
@@ -848,6 +1028,7 @@ function oEx(p,r,c){
   
   // ocultar cantidad al editar
   document.getElementById('QFR').style.display='none';
+  document.getElementById('SZR').style.display='none';
   document.getElementById('PGS').style.display='none';
   document.getElementById('FN').value='';
   document.getElementById('RMB').style.display='block';
@@ -856,7 +1037,21 @@ function oEx(p,r,c){
 
 function CPI(){document.getElementById('PIM').style.display='none';pNP=null;}
 
-function RP(){if(!pNP||!pNP.ex||!pNP.id)return;if(pG[pNP.r]&&pG[pNP.r][pNP.c]===pNP.id)pG[pNP.r][pNP.c]=null;delete P[pNP.id];CPI();saveData();rCG();if(curScr==='garden')rG();if(curScr==='patch')rEH();}
+function RP(){
+  if(!pNP||!pNP.ex||!pNP.id)return;
+  const id=pNP.id;
+  // eliminar planta de todas las celdas que ocupa
+  for(let r=0;r<gR;r++)
+    for(let c=0;c<gC;c++)
+      if(pG[r]&&pG[r][c])
+        pG[r][c]=pG[r][c].filter(i=>i!==id);
+  delete P[id];
+  CPI();
+  saveData();
+  rCG();
+  if(curScr==='garden')rG();
+  if(curScr==='patch')rEH();
+}
 
 function SPI(){
   if(!pNP)return;
@@ -901,6 +1096,12 @@ function SPI(){
   
   // crear planta(s) nueva(s) - obtener cantidad
   const qty=parseInt(document.getElementById('FQ').value)||1;
+  // convertir dimensiones usando la unidad elegida en el formulario
+  const fsu=document.getElementById('FSU').value||cU;
+  const fswVal=parseFloat(document.getElementById('FSW').value)||cellSize();
+  const fshVal=parseFloat(document.getElementById('FSH').value)||cellSize();
+  const pw=dimToCells(fswVal,fsu);
+  const ph=dimToCells(fshVal,fsu);
   const vk=pNP.n.toLowerCase();
   const vinfo=VG[vk];
   
@@ -922,9 +1123,11 @@ function SPI(){
       w:false,
       plantedAt:pl.getTime(),
       harvestDays:vinfo?vinfo.harvestDays:70,
-      sci:pNP.sci||''
+      sci:pNP.sci||'',
+      pw, // ancho en celdas
+      ph  // alto en celdas
     };
-    pQueue.push({id,e:pNP.e,nm:iS?pNP.ns:pNP.n});
+    pQueue.push({id,e:pNP.e,nm:iS?pNP.ns:pNP.n,pw,ph});
   }
   
   const svK=pNP.n.toLowerCase();
@@ -945,24 +1148,42 @@ function SPI(){
 
 function plc(r,c){
   if(!pP)return;
-  if(!pG[r])pG[r]=Array(gC).fill(null);
   
-  // verificar advertencia de rotación
+  const pw=pP.pw||1;
+  const ph=pP.ph||1;
+  
+  // verificar que el tamaño cabe en la cuadrícula — recortar si desborda
+  const actualPh=Math.min(ph,gR-r);
+  const actualPw=Math.min(pw,gC-c);
+  
   const plant=P[pP.id];
   if(plant){
     const warning=checkRotationWarning(r,c,plant.n);
     if(warning){
       if(!confirm(warning+'\n\n'+(iS?'¿Plantar de todas formas?':'Plant anyway?'))){
-        return; // no plantar si el usuario cancela
+        return;
       }
     }
-    // registrar rotación
     trackRotation(r,c,plant.n);
   }
   
-  pG[r][c]=pP.id;
+  // añadir planta a todas las celdas del área (permite varias por celda)
+  for(let dr=0;dr<actualPh;dr++){
+    if(!pG[r+dr])pG[r+dr]=Array(gC).fill(null).map(()=>[]);
+    for(let dc=0;dc<actualPw;dc++){
+      if(!Array.isArray(pG[r+dr][c+dc]))pG[r+dr][c+dc]=[];
+      if(!pG[r+dr][c+dc].includes(pP.id))
+        pG[r+dr][c+dc].push(pP.id);
+    }
+  }
+  // marcar celda ancla (esquina superior izquierda)
+  if(plant){
+    plant.anchorR=r;
+    plant.anchorC=c;
+    plant.pw=actualPw;
+    plant.ph=actualPh;
+  }
   
-  // verificar si quedan plantas en la cola
   if(pQueue.length>0){
     pP=pQueue.shift();
     const remaining=pQueue.length;
@@ -972,7 +1193,6 @@ function plc(r,c){
     if(curScr==='garden')rG();
     if(curScr==='patch')rEH();
   }else{
-    // no quedan plantas, terminó la colocación
     pP=null;
     document.getElementById('PH').style.display='none';
     saveData();
@@ -1107,6 +1327,26 @@ function checkRotationWarning(r,c,plantName){
   }
   return null;
 }
+// convertir dimensión en cualquier unidad → número de celdas
+function dimToCells(val,unit){
+  const valCm=unit==='m'?val*100:unit==='ft'?val*30.48:unit==='in'?val*2.54:val;
+  const cellCm=cellSize()/gUF(); // tamaño de celda en cm
+  return Math.max(1,Math.round(valCm/cellCm));
+}
+
+// mostrar preview de cuántas celdas ocupará la planta
+function updateSizePreview(){
+  const el=document.getElementById('SZP');
+  if(!el)return;
+  const w=parseFloat(document.getElementById('FSW').value)||cellSize();
+  const h=parseFloat(document.getElementById('FSH').value)||cellSize();
+  const unit=document.getElementById('FSU').value||cU;
+  const pw=dimToCells(w,unit);
+  const ph=dimToCells(h,unit);
+  const cs=cellSize();
+  el.textContent=`→ ${pw}×${ph} ${iS?'celdas':'cells'} · ${iS?'cada celda':'each cell'}: ${cs}${cU}`;
+}
+
 function doW(id){const p=P[id];if(!p||p.w||p.tp==='pest'||p.tp==='flower')return;p.w=true;p.lwt=Date.now();const wb=document.getElementById('wb-'+id),ub=document.getElementById('ub-'+id),lbl=document.getElementById('wl-'+id),card=document.getElementById('gc-'+id);if(wb)wb.style.display='none';if(ub)ub.style.display='flex';if(card)card.style.borderColor='var(--cb)';dWI('wi-'+id,true);if(lbl){lbl.style.color='#4caf50';lbl.textContent=tx('wn');}saveData();clearInterval(wT[id]);let m=0;wT[id]=setInterval(()=>{m++;const l=document.getElementById('wl-'+id);if(l)l.textContent=`${iS?'Regado hace':'Watered'} ${m<60?m+'m':Math.floor(m/60)+'h'} ${iS?'':'ago'}`;},60000);const cyc=p.wE*MSD;setTimeout(()=>{if(p.w){p.w=false;clearInterval(wT[id]);saveData();const w2=document.getElementById('wb-'+id),u2=document.getElementById('ub-'+id);if(w2){w2.style.display='flex';w2.onclick=()=>doW(id);}if(u2)u2.style.display='none';dWI('wi-'+id,false);const l2=document.getElementById('wl-'+id);if(l2){l2.style.color='#b06000';l2.textContent=tx('nw');}}},cyc);}
 
 function unW(id){const p=P[id];if(!p||!p.w||p.tp==='pest'||p.tp==='flower')return;clearInterval(wT[id]);p.w=false;p.lwt=Date.now()-p.wE*MSD*.95;const wb=document.getElementById('wb-'+id),ub=document.getElementById('ub-'+id),lbl=document.getElementById('wl-'+id);if(wb){wb.style.display='flex';wb.onclick=()=>doW(id);}if(ub)ub.style.display='none';dWI('wi-'+id,false);if(lbl){lbl.style.color='#b06000';lbl.textContent=tx('nw');}saveData();}
