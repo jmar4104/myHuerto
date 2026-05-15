@@ -1,31 +1,33 @@
-// Math constants for the rotating dials
+// constantes matemáticas para los discos
 const TAU=Math.PI*2,MSD=86400000;
 
-// App state - probably should organize this better later
-let tC=false,iN=false,iS=true,cU='cm',curScr='garden',selDay=new Date().getDate(),sortIdx=0,showFlowers=false,pickerType='veg';
-let pW=200,pL=300,gC=6,gR=5;
+// estado de la app - habría que organizar esto mejor después
+let tC=false,iN=false,iS=true,cU='ft',curScr='garden',selDay=new Date().getDate(),sortIdx=0,showFlowers=false,pickerType='veg';
+let pW=183,pL=305,gC=6,gR=5; // pW/pL siempre en cm internamente (183cm≈6ft, 305cm≈10ft)
+let notificationsEnabled=false,weatherEnabled=false,rotationEnabled=false;
+let weatherData=null,rotationHistory={};
 
-// Translations - ES/EN
-const TX={en:{myGarden:'Mi Huerto',myPatch:'My Garden',planted:'Planted',active:'active',savedToGrow:'Saved to grow',navGarden:'Mi Huerto',navPatch:'Garden',navCal:'Calendar',navVeggies:'Veggies',patchDim:'Patch dimensions',width:'Width',length:'Length',unit:'Unit',pestGuardLbl:'Pest guard',commonPests:'Common pests',tapCellHint:'Tap plant to edit/remove.',addPlantTitle:'Add plant',choosePlant:'Choose a plant',fillDetails:'Fill details',datePlanted:'Date planted',quantity:'Quantity',waterFreq:'Watering',sunlight:'Sunlight',feedSched:'Fertilising',notesLbl:'Notes',nw:'Needs Watering',od:'⚠ Water Overdue',tw:'Tap 💧 to log',wn:'Watered just now',nm:'Night mode',dm:'Day mode',qty:'in patch'},es:{myGarden:'Mi Huerto',myPatch:'Mi Jardín',planted:'Plantados',active:'activos',savedToGrow:'Guardados',navGarden:'Mi Huerto',navPatch:'Jardín',navCal:'Calendario',navVeggies:'Vegetales',patchDim:'Dimensiones',width:'Ancho',length:'Largo',unit:'Unidad',pestGuardLbl:'Guardianas',commonPests:'Plagas comunes',tapCellHint:'Toca planta para editar/eliminar.',addPlantTitle:'Añadir planta',choosePlant:'Escoge planta',fillDetails:'Completa datos',datePlanted:'Fecha siembra',quantity:'Cantidad',waterFreq:'Riego',sunlight:'Luz solar',feedSched:'Fertilización',notesLbl:'Notas',nw:'Necesita agua',od:'⚠ Riego atrasado',tw:'Toca 💧',wn:'Regado ahora',nm:'Modo noche',dm:'Modo día',qty:'en jardín'}};
+// traducciones español/inglés
+const TX={en:{myGarden:'Mi Huerto',myPatch:'My Garden',planted:'Planted',active:'active',savedToGrow:'Saved to grow',navGarden:'Mi Huerto',navPatch:'Garden',navCal:'Calendar',navVeggies:'Veggies',patchDim:'Patch dimensions',width:'Width',length:'Length',unit:'Unit',pestGuardLbl:'Pest guard',commonPests:'Common pests',tapCellHint:'Tap plant to edit/remove.',addPlantTitle:'Add plant',choosePlant:'Choose a plant',fillDetails:'Fill details',datePlanted:'Date planted',quantity:'Quantity',waterFreq:'Watering',sunlight:'Sunlight',feedSched:'Fertilising',notesLbl:'Notes',nw:'Needs Watering',od:'⚠ Water Overdue',tw:'Tap 💧 to log',wn:'Watered just now',nm:'Night mode',dm:'Day mode',qty:'in patch',notifications:'Notifications',weather:'Weather',rotation:'Crop Rotation',enableNotif:'Enable watering reminders',enableWeather:'Show PR weather',enableRotation:'Track crop rotation'},es:{myGarden:'Mi Huerto',myPatch:'Mi Jardín',planted:'Plantados',active:'activos',savedToGrow:'Guardados',navGarden:'Mi Huerto',navPatch:'Jardín',navCal:'Calendario',navVeggies:'Vegetales',patchDim:'Dimensiones',width:'Ancho',length:'Largo',unit:'Unidad',pestGuardLbl:'Guardianas',commonPests:'Plagas comunes',tapCellHint:'Toca planta para editar/eliminar.',addPlantTitle:'Añadir planta',choosePlant:'Escoge planta',fillDetails:'Completa datos',datePlanted:'Fecha siembra',quantity:'Cantidad',waterFreq:'Riego',sunlight:'Luz solar',feedSched:'Fertilización',notesLbl:'Notas',nw:'Necesita agua',od:'⚠ Riego atrasado',tw:'Toca 💧',wn:'Regado ahora',nm:'Modo noche',dm:'Modo día',qty:'en jardín',notifications:'Notificaciones',weather:'Clima',rotation:'Rotación de Cultivos',enableNotif:'Activar recordatorios de riego',enableWeather:'Mostrar clima PR',enableRotation:'Rastrear rotación'}};
 function tx(k){return(iS?TX.es:TX.en)[k]||k;}
 function aTx(){document.querySelectorAll('[data-t]').forEach(e=>{e.textContent=tx(e.dataset.t);});}
 
-const P={}; // Plants in garden
-let SV={}; // Saved/bookmarked plants
-let pG=Array.from({length:gR},()=>Array(gC).fill(null)); // patch grid
-let pQueue=[]; // Queue of plants to place when quantity > 1
+const P={}; // plantas en el jardín
+let SV={}; // plantas guardadas/favoritas
+let pG=Array.from({length:gR},()=>Array(gC).fill(null)); // cuadrícula del jardín
+let pQueue=[]; // cola de plantas pendientes por colocar
 
-// Companion planting recommendations
+// recomendaciones de plantas compañeras
 const PGR={tomato:['basil','marigold'],carrot:['marigold'],lettuce:['basil','marigold'],capsicum:['basil','marigold'],broccoli:['marigold'],cucumber:['marigold'],onion:['basil'],garlic:[],pumpkin:['marigold'],corn:['marigold'],bean:['marigold'],eggplant:['basil','marigold'],chilli:['basil'],potato:['marigold']};
 
-// Detailed growing info for main veggies
+// info detallada de cultivo para vegetales principales
 const VG={
   tomato:{tip:'Switch to low-N once fruiting to focus on fruit.',pest:'Aphids, hornworms',harvest:'60-80 days',harvestDays:70,compat:'Basil, marigold',ph:'6.0–6.8',moist:'Moist, not wet',temp:'20–29°C',drain:'Well-drained',fung:'Moderate',heat:'Moderate',year:'Year-round ok',start:'Seed',dif:1,shade:[7,8,9,10,11,12,13,14,15,16],pwStart:5,pwEnd:8},
   carrot:{tip:'Thin seedlings to 2" apart. Keep soil loose.',pest:'Carrot flies, aphids',harvest:'70-80 days',harvestDays:75,compat:'Onions, marigold',ph:'6.0–6.8',moist:'Moderate',temp:'15–24°C',drain:'Well-drained',fung:'Low',heat:'Low',year:'Good',start:'Seed',dif:1,shade:[11,12,13,14,15],pwStart:10,pwEnd:2},
   lettuce:{tip:'Provide afternoon shade. Harvest outer leaves.',pest:'Aphids, slugs',harvest:'30-60 days',harvestDays:45,compat:'Carrots, radishes',ph:'6.0–7.0',moist:'High',temp:'10–20°C',drain:'Well-drained',fung:'Moderate',heat:'High',year:'Poor',start:'Seed',dif:1,shade:[11,12,13,14,15,16],pwStart:11,pwEnd:2}
 };
 
-// Vegetable list - all native american plants
+// lista de vegetales - todas plantas nativas americanas
 const VL=[
   {e:'🍅',n:'Tomato',ns:'Tomate',sci:'Solanum lycopersicum',dif:1,sd:'Semilla',mo:'Todo el año',tmp:'65–85°F',sun:'Completo',rg:'Ideal para PR',pop:10},
   {e:'🥔',n:'Potato',ns:'Papa',sci:'Solanum tuberosum',dif:2,sd:'Semilla',mo:'Nov–Feb',tmp:'60–70°F',sun:'Completo',rg:'Temporada fría',pop:9},
@@ -52,7 +54,7 @@ const VL=[
   {e:'🫐',n:'Passion Fruit',ns:'Parcha',sci:'Passiflora edulis',dif:2,sd:'Semilla',mo:'Todo el año',tmp:'68–82°F',sun:'Completo',rg:'Ideal para PR',pop:7}
 ];
 
-// Native american flowers
+// flores nativas americanas
 const FL=[
   {e:'🌻',n:'Sunflower',ns:'Girasol',sci:'Helianthus annuus',dif:1,sd:'Semilla',mo:'Todo el año',tmp:'70–85°F',sun:'Completo',rg:'Ideal para PR',pop:10},
   {e:'🌹',n:'Rose',ns:'Rosa',sci:'Rosa spp.',dif:3,sd:'Planta',mo:'Todo el año',tmp:'60–75°F',sun:'Completo',rg:'Algunas nativas',pop:8},
@@ -80,25 +82,26 @@ const FL=[
   {e:'🌹',n:'Cardinal Flower',ns:'Flor Cardinal',sci:'Lobelia cardinalis',dif:2,sd:'Semilla',mo:'Todo el año',tmp:'60–75°F',sun:'Parcial',rg:'Necesita humedad',pop:6}
 ];
 
-// localStorage save/load
+// guardar y cargar datos locales
 function saveData(){
   try{
     localStorage.setItem('huertoPlants',JSON.stringify(P));
     localStorage.setItem('huertoGrid',JSON.stringify(pG));
     localStorage.setItem('huertoSaved',JSON.stringify(SV));
     localStorage.setItem('huertoDim',JSON.stringify({pW,pL,gC,gR,cU}));
-    localStorage.setItem('huertoSettings',JSON.stringify({iS,iN,tC}));
+    localStorage.setItem('huertoSettings',JSON.stringify({iS,iN,tC,notificationsEnabled,weatherEnabled,rotationEnabled}));
+    localStorage.setItem('huertoRotation',JSON.stringify(rotationHistory));
   }catch(e){console.error('Save failed:',e);}
 }
 
 function loadData(){
   try{
-    // Load dimensions FIRST so grid has correct size
+    // cargar dimensiones PRIMERO para que la cuadrícula tenga el tamaño correcto
     const dim=localStorage.getItem('huertoDim');
     if(dim){
       const d=JSON.parse(dim);
       pW=d.pW||200;pL=d.pL||300;gC=d.gC||6;gR=d.gR||5;cU=d.cU||'cm';
-      // Rebuild grid with correct dimensions
+      // reconstruir la cuadrícula con las dimensiones correctas
       pG=Array.from({length:gR},()=>Array(gC).fill(null));
     }
     
@@ -117,10 +120,20 @@ function loadData(){
       iS=s.iS!==undefined?s.iS:true;
       iN=s.iN||false;
       tC=s.tC||false;
+      notificationsEnabled=s.notificationsEnabled||false;
+      weatherEnabled=s.weatherEnabled||false;
+      rotationEnabled=s.rotationEnabled||false;
       if(iN)document.getElementById('app').classList.add('night');
     }
     
-    // Clean up orphaned plants (in P but not in grid)
+    const rotation=localStorage.getItem('huertoRotation');
+    if(rotation)rotationHistory=JSON.parse(rotation);
+    
+    // iniciar funciones si están activadas
+    if(notificationsEnabled)scheduleWateringNotifications();
+    if(weatherEnabled)fetchWeather();
+    
+    // limpiar plantas huérfanas (en P pero no en la cuadrícula)
     const idsInGrid=new Set();
     for(let r=0;r<gR;r++){
       for(let c=0;c<gC;c++){
@@ -131,11 +144,11 @@ function loadData(){
       if(!idsInGrid.has(id))delete P[id];
     });
     
-    // Backfill missing plantedAt and harvestDays for old plants
+    // rellenar campos faltantes en plantas viejas
     Object.values(P).forEach(p=>{
       if(p.tp!=='pest'&&p.tp!=='flower'){
         if(!p.plantedAt){
-          // Use lwt (last water time) as best guess for planting date
+          // usar el último riego como fecha aproximada de siembra
           p.plantedAt=p.lwt||Date.now();
         }
         if(!p.harvestDays){
@@ -149,7 +162,7 @@ function loadData(){
   }catch(e){console.error('Load failed:',e);}
 }
 
-// Calculate water/sun/feed progress
+// calcular progreso de agua/sol/fertilizante
 function arcs(p){
   if(p.tp==='pest'||p.tp==='flower')return{w:0,s:0,f:0};
   const now=Date.now(),wC=p.wE*MSD,fC=p.fE*MSD;
@@ -158,7 +171,7 @@ function arcs(p){
 
 function isOD(p){return p.tp!=='pest'&&p.tp!=='flower'&&!p.w&&arcs(p).w>=1;}
 
-// Count how many of this plant are in the patch
+// contar cuántas de esta planta hay en el jardín
 function pCnt(nm){
   let n=0;
   for(let r=0;r<gR;r++)
@@ -169,7 +182,7 @@ function pCnt(nm){
   return n;
 }
 
-// Toggle bookmark star
+// activar/desactivar estrella de favorito
 function toggleBookmark(vk){
   if(SV[vk]){
     delete SV[vk];
@@ -184,7 +197,7 @@ function toggleBookmark(vk){
   if(curScr==='veg')rVL();
 }
 
-// Draw the rotating care dial on canvas
+// dibujar el disco de cuidado en canvas
 function dDial(cid,pid){
   const c=document.getElementById(cid);
   if(!c)return;
@@ -197,7 +210,7 @@ function dDial(cid,pid){
   const a=arcs(p),od=isOD(p);
   const wTh=Math.max(4,Math.round(12/p.wE)),fTh=Math.max(3,Math.round(50/p.fE)),sTh=5,segL=TAU/8;
   
-  // Draw the 3 rings (water, sun, fertilizer)
+  // dibujar los 3 anillos: agua, sol, fertilizante
   const rings=[
     {r:cx-5,th:wTh,trk:iN?'#081828':'#a0d0ff',fil:od?'#e03030':'#1e90ff',ic:'💧',fr:a.w},
     {r:cx-14,th:sTh,trk:iN?'#1c1004':'#ffe0a0',fil:'#f0a020',ic:'☀️',fr:a.s},
@@ -227,7 +240,7 @@ function dDial(cid,pid){
     ctx.fillText(ring.ic,cx+ring.r*Math.cos(mid),cy+ring.r*Math.sin(mid));
   });
   
-  // Center plant icon
+  // ícono de planta en el centro
   ctx.beginPath();
   ctx.arc(cx,cy,8,0,TAU);
   ctx.fillStyle=od?'rgba(220,50,50,.1)':iN?'#0e1a0a':'#efffee';
@@ -247,7 +260,7 @@ function dDial(cid,pid){
   ctx.fill();
 }
 
-// Bookmark growth ring
+// anillo de crecimiento para favoritos
 function dBook(id,fr,act){
   const c=document.getElementById(id);
   if(!c)return;
@@ -295,7 +308,7 @@ function dBook(id,fr,act){
   ctx.fill();
 }
 
-// Day/night indicator
+// indicador de día/noche
 function dDay(id){
   const c=document.getElementById(id);
   if(!c)return;
@@ -321,7 +334,7 @@ function dDay(id){
   ctx.fillText(dy?'☀️':'🌙',cx+ir*Math.cos(a),cy+ir*Math.sin(a));
 }
 
-// Water droplet icon
+// ícono de gota de agua
 function dWI(id,done){
   const c=document.getElementById(id);
   if(!c)return;
@@ -341,9 +354,9 @@ function dWI(id,done){
   ctx.fillText(done?'✅':'💧',W/2,H/2);
 }
 
-const wT={}; // water timers
+const wT={}; // temporizadores de riego
 
-// Navigation
+// navegación
 function goTo(s){
   curScr=s;
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
@@ -360,13 +373,13 @@ function goTo(s){
   }
 }
 
-// Render garden screen
+// renderizar pantalla de mi huerto
 function rGS(){
   const hdr=document.getElementById('HDR');
   hdr.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between"><div style="flex:1"><div style="font-size:18px;font-weight:600;color:#fff">${tx('myGarden')}</div><div style="font-size:11px;color:rgba(255,255,255,.7)">Puerto Rico · Zone 12b</div><div style="font-size:10px;color:rgba(255,255,255,.45)">Tropical, sin heladas, mín 50–55°F</div></div><div style="display:flex;align-items:center;gap:10px"><canvas id="dd-g" width="36" height="36"></canvas><div id="TB" onclick="TT()" style="cursor:pointer;background:rgba(255,255,255,.2);border-radius:10px;padding:4px 10px;font-size:12px;color:#fff;font-weight:600;user-select:none">°F</div></div></div>`;
   
   const main=document.getElementById('MAIN');
-  main.innerHTML=`<div class="sec"><span data-t="planted">Plantados</span> · <span id="pcnt">0</span> <span data-t="active">activos</span></div><div id="GC"></div><div class="sec" data-t="savedToGrow">Guardados</div><div id="SC"></div><div style="display:flex;gap:8px;justify-content:center;padding:8px 12px 16px"><button id="LB" onclick="TL()" style="background:#183a10;color:#a8d47a;border:1px solid #3a7030;border-radius:16px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer">🌐 English</button><button id="NB" onclick="TN()" style="background:#161628;color:#b0b0cc;border:1px solid #404060;border-radius:16px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer">🌙 ${tx('nm')}</button></div>`;
+  main.innerHTML=`<div class="sec"><span data-t="planted">Plantados</span> · <span id="pcnt">0</span> <span data-t="active">activos</span></div><div id="GC"></div><div class="sec" data-t="savedToGrow">Guardados</div><div id="SC"></div><div class="sec">Funciones</div><div style="padding:0 12px 16px;display:flex;flex-direction:column;gap:8px"><button id="notifBtn" onclick="toggleNotifications()" style="background:${notificationsEnabled?'#2d5a1b':'#3a3a50'};color:${notificationsEnabled?'#a8d47a':'#b0b0cc'};border:1px solid ${notificationsEnabled?'#4a8a30':'#505070'};border-radius:12px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;text-align:left"><span data-t="notifications">🔔 Notificaciones</span> · <span style="font-size:10px;opacity:0.8" data-t="enableNotif">${notificationsEnabled?'Activadas':'Desactivadas'}</span></button><button id="weatherBtn" onclick="toggleWeather()" style="background:${weatherEnabled?'#2d5a1b':'#3a3a50'};color:${weatherEnabled?'#a8d47a':'#b0b0cc'};border:1px solid ${weatherEnabled?'#4a8a30':'#505070'};border-radius:12px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;text-align:left"><span data-t="weather">🌤️ Clima PR</span> · <span style="font-size:10px;opacity:0.8" data-t="enableWeather">${weatherEnabled?'Activado':'Desactivado'}</span><span id="weather-display" style="margin-left:8px;font-size:10px"></span></button><button id="rotationBtn" onclick="toggleRotation()" style="background:${rotationEnabled?'#2d5a1b':'#3a3a50'};color:${rotationEnabled?'#a8d47a':'#b0b0cc'};border:1px solid ${rotationEnabled?'#4a8a30':'#505070'};border-radius:12px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;text-align:left"><span data-t="rotation">🔄 Rotación</span> · <span style="font-size:10px;opacity:0.8" data-t="enableRotation">${rotationEnabled?'Activada':'Desactivada'}</span></button></div><div style="display:flex;gap:8px;justify-content:center;padding:8px 12px 16px"><button id="LB" onclick="TL()" style="background:#183a10;color:#a8d47a;border:1px solid #3a7030;border-radius:16px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer">🌐 English</button><button id="NB" onclick="TN()" style="background:#161628;color:#b0b0cc;border:1px solid #404060;border-radius:16px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer">🌙 ${tx('nm')}</button></div>`;
   
   aTx();
   rG();
@@ -457,7 +470,7 @@ function rSaved(){
   });
 }
 
-// TODO: add more detailed plant care guides
+// TODO: añadir guías de cuidado más detalladas
 function oPD(id){
   const p=P[id];
   if(!p)return;
@@ -473,14 +486,14 @@ function oPD(id){
   setTimeout(()=>slide.classList.add('open'),10);
 }
 
-// This function is way too long, need to refactor later
+// esta función es muy larga, hay que refactorizar después
 function oVD(v){const vk=v.n.toLowerCase();const vinfo=VG[vk]||{tip:'Se necesita cuidado general.',pest:'Varios',harvest:'60-90 días',compat:'La mayoría de plantas',ph:'6.0-7.0',moist:'Moderado',temp:'20-25°C',drain:'Bien drenado',fung:'Bajo',heat:'Bajo',year:'Bueno',start:'Semilla',dif:1,shade:[]};const dn=iS?(v.ns||v.n):v.n;const difText=vinfo.dif===1?'Fácil':vinfo.dif===2?'Moderado':'Difícil';const shadeHTML=vinfo.shade.length>0?`<div style="margin:10px 16px 0">${Array.from({length:24},(_,i)=>i+6).map(h=>`<span class="todpill ${vinfo.shade.includes(h)?'shd':'exp'}">${h}h</span>`).join('')}</div>`:'';const slide=document.getElementById('SLIDE');slide.innerHTML=`<div class="dhdr"><div style="display:flex;align-items:center;justify-content:space-between"><div onclick="CSD()" style="cursor:pointer;font-size:24px;color:#fff;padding:4px">←</div><div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:700;color:#fff">${v.e} ${dn}</div><div style="font-size:11px;color:rgba(255,255,255,.7)">${v.sci||''}</div></div><div style="width:28px"></div></div><div style="margin-top:8px"><span class="badge">${difText}</span><span class="badge">${vinfo.start||v.sd}</span><span class="badge">${v.mo}</span></div></div><div style="padding-bottom:80px"><div class="sectt">Riego</div><div class="cgrid"><div class="citem"><div class="cimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23d0f0ff' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='60' text-anchor='middle' dy='.3em'%3E💧%3C/text%3E%3C/svg%3E" alt="Drip"></div><div class="clab">Riego por goteo</div><div class="csub">Agua directo a las raíces</div><div class="chk">✓</div></div><div class="citem"><div class="cimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23ffe0e0' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='60' text-anchor='middle' dy='.3em'%3E🚿%3C/text%3E%3C/svg%3E" alt="Overhead"></div><div class="clab">Riego aéreo</div><div class="csub">Promueve hongos</div><div class="xcr">✗</div></div></div><div class="sectt">Sombra ${vinfo.shade.length>0?'(calor tropical)':''}</div>${vinfo.shade.length>0?`<div class="cgrid"><div class="citem"><div class="cimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23f0f0f0' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='60' text-anchor='middle' dy='.3em'%3E☀️%3C/text%3E%3C/svg%3E" alt="Shade"></div><div class="clab">Malla sombra</div><div class="csub">30-50% cobertura</div></div><div class="citem"><div class="cimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23f0f0f0' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='60' text-anchor='middle' dy='.3em'%3E☂️%3C/text%3E%3C/svg%3E" alt="Umbrella"></div><div class="clab">Sombrilla jardín</div><div class="csub">Opción portátil</div></div></div>${shadeHTML}`:'<div style="margin:0 16px 10px;font-size:11px;color:var(--txt3);font-style:italic">Se recomienda exposición completa al sol</div>'}<div class="sectt">Poda</div><div class="cgrid"><div class="citem"><div class="cimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23f0f0e8' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='60' text-anchor='middle' dy='.3em'%3E🌱%3C/text%3E%3C/svg%3E" alt="Sucker"></div><div class="clab">Área de chupón</div><div class="csub">Pellizcar entre tallo y rama</div></div><div class="citem"><div class="cimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23f0f0e8' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='60' text-anchor='middle' dy='.3em'%3E✂️%3C/text%3E%3C/svg%3E" alt="Prune"></div><div class="clab">Hojas bajas</div><div class="csub">Remover para flujo de aire</div></div></div><div style="margin:10px 16px 0;font-size:11px;color:var(--txt);line-height:1.5">${vinfo.tip}</div><div class="sectt">Retos Zona 12B</div><div class="chgrid"><div class="chitem ${vinfo.fung==='High'?'warn':vinfo.fung==='Low'?'good':''}"><div class="chlab">Hongos</div><div class="chval">${vinfo.fung}</div></div><div class="chitem ${vinfo.heat==='High'?'warn':vinfo.heat==='Low'?'good':''}"><div class="chlab">Calor</div><div class="chval">${vinfo.heat}</div></div><div class="chitem ${vinfo.year.includes('Excellent')||vinfo.year.includes('Year-round')||vinfo.year.includes('Good')?'good':'warn'}"><div class="chlab">Todo el año</div><div class="chval">${vinfo.year}</div></div></div><div class="sectt">Condiciones de suelo</div><div class="soilgrid"><div class="soilitem"><div class="soillab">pH</div><div class="soilval">${vinfo.ph}</div></div><div class="soilitem"><div class="soillab">Humedad</div><div class="soilval">${vinfo.moist}</div></div><div class="soilitem"><div class="soillab">Temp suelo</div><div class="soilval">${vinfo.temp}</div></div><div class="soilitem"><div class="soillab">Drenaje</div><div class="soilval">${vinfo.drain}</div></div></div><div class="sectt">Contenedores</div><div class="contgrid"><div class="contitem"><div class="contimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23e8e0d0' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='50' text-anchor='middle' dy='.3em'%3E🌱%3C/text%3E%3C/svg%3E" alt="Tray"></div><div class="contlab">Bandeja</div><div class="contsub">Germinación</div></div><div class="contitem"><div class="contimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23e8d0c0' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='50' text-anchor='middle' dy='.3em'%3E🏺%3C/text%3E%3C/svg%3E" alt="Pot"></div><div class="contlab">Terracota 15cm</div><div class="contsub">Planta joven</div></div><div class="contitem"><div class="contimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23d8d0d8' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='50' text-anchor='middle' dy='.3em'%3E👜%3C/text%3E%3C/svg%3E" alt="Bag"></div><div class="contlab">Bolsa 30L</div><div class="contsub">Planta madura</div></div><div class="contitem ideal"><div class="contimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23d8e8d0' width='200' height='200'/%3E%3Ctext x='100' y='100' font-size='50' text-anchor='middle' dy='.3em'%3E🌿%3C/text%3E%3C/svg%3E" alt="Bed"></div><div class="contlab">Cama elevada</div><div class="contsub">Ideal</div></div></div><div class="sectt">Info adicional</div><div class="infobox"><div class="infott">🐛 Plagas comunes</div><div class="infotx">${vinfo.pest}</div></div><div class="infobox"><div class="infott">⏱️ Días a cosecha</div><div class="infotx">${vinfo.harvest}</div></div><div class="infobox"><div class="infott">🤝 Plantas compañeras</div><div class="infotx">${vinfo.compat}</div></div><div style="margin:16px;"><button class="bg" onclick="CSD();setTimeout(()=>goTo('patch'),100);setTimeout(OAP,200)">+ Añadir a Mi Jardín</button></div></div>`;setTimeout(()=>slide.classList.add('open'),10);}
 
 function CSD(){document.getElementById('SLIDE').classList.remove('open');}
 
-// Patch screen stuff
+// cosas de la pantalla del jardín
 let pP=null;
-function rPS(){const hdr=document.getElementById('HDR');hdr.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between"><div style="flex:1"><div style="font-size:18px;font-weight:600;color:#fff">${tx('myPatch')}</div><div style="font-size:11px;color:rgba(255,255,255,.7)">Puerto Rico · Zone 12b</div></div><div style="display:flex;align-items:center;gap:10px"><canvas id="dd-p" width="36" height="36"></canvas><div onclick="OAP()" style="cursor:pointer;background:#fff;color:#1a4a10;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:700;border:2px solid #4caf50">+ Planta</div></div></div>`;const main=document.getElementById('MAIN');main.innerHTML=`<div style="background:var(--card);border:1.5px solid var(--cb);border-radius:14px;margin:10px 12px 8px;padding:10px 14px;overflow:visible"><div style="font-size:11px;color:#4caf50;font-weight:600;margin-bottom:6px">📐 <span data-t="patchDim">Dimensiones</span></div><div style="display:flex;gap:8px;align-items:flex-end"><div style="flex:1"><div style="font-size:10px;color:var(--txt2);margin-bottom:3px;font-weight:600" data-t="width">Ancho</div><input class="dim-inp" id="DW" type="number" value="${pW}" min="30" max="2000" onchange="ODC()"></div><span style="font-size:14px;color:var(--txt3);margin-bottom:10px;font-weight:500">×</span><div style="flex:1"><div style="font-size:10px;color:var(--txt2);margin-bottom:3px;font-weight:600" data-t="length">Largo</div><input class="dim-inp" id="DL" type="number" value="${pL}" min="30" max="2000" onchange="ODC()"></div><div style="flex:1" class="unit-wrap"><div style="font-size:10px;color:var(--txt2);margin-bottom:3px;font-weight:600" data-t="unit">Unidad</div><div class="unit-trigger" onclick="TU()"><span id="UL">${cU}</span><span style="font-size:12px">▼</span></div><div id="UD" class="unit-dd"><div onclick="SU('cm')">cm</div><div onclick="SU('m')">m</div><div onclick="SU('ft')">ft</div><div onclick="SU('in')">in</div></div></div></div><div style="margin-top:6px;font-size:10px;color:var(--txt3);font-weight:500" id="GI">Cuadrícula: ${gC} × ${gR}</div></div><div class="ph" id="PH"><span id="PHT"></span></div><div style="margin:4px 12px 6px;border-radius:14px;border:1.5px solid var(--cb);overflow:hidden"><div style="display:flex;background:#183a0e;border-bottom:1px solid var(--cb)"><div style="width:28px;flex-shrink:0;border-right:1px solid rgba(80,160,80,.3)"></div><div id="TopR" style="flex:1;display:grid"></div></div><div style="display:flex"><div id="LeftR" style="width:28px;flex-shrink:0;border-right:1px solid rgba(80,160,80,.3);background:#183a0e"></div><div style="flex:1;position:relative"><canvas id="GV"></canvas><div id="CG" style="position:absolute;top:0;left:0;width:100%;height:100%;display:grid"></div></div></div></div><div style="display:flex;gap:8px;padding:0 12px 6px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--txt3)"><div style="width:10px;height:10px;background:rgba(80,160,80,.5);border-radius:3px"></div><span data-t="planted">Plantados</span></div><div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--txt3)"><div style="width:10px;height:10px;background:rgba(200,80,200,.3);border-radius:3px"></div><span data-t="pestGuardLbl">Guardianas</span></div></div><div style="background:var(--hint);border:1.5px solid var(--hintb);border-radius:12px;padding:8px 12px;margin:0 12px 8px;font-size:11px;color:var(--hintt);font-weight:500" data-t="tapCellHint">Toca planta para editar/eliminar.</div><div class="sec">Cosecha esperada</div><div id="EHV"></div><div class="sec" data-t="commonPests">Plagas comunes</div><div style="padding:0 12px 14px"><div style="background:var(--card);border:1.5px solid #d06060;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px"><div style="width:50px;height:50px;border-radius:10px;background:#ffeaea;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🐛</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--txt)">Áfidos</div><div style="font-size:10px;color:var(--txt3)">Más común</div></div><div style="background:#300808;color:#f09090;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700">#1</div></div></div>`;aTx();bP();rEH();setTimeout(()=>dDay('dd-p'),50);}
+function rPS(){const hdr=document.getElementById('HDR');hdr.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between"><div style="flex:1"><div style="font-size:18px;font-weight:600;color:#fff">${tx('myPatch')}</div><div style="font-size:11px;color:rgba(255,255,255,.7)">Puerto Rico · Zone 12b</div></div><div style="display:flex;align-items:center;gap:10px"><canvas id="dd-p" width="36" height="36"></canvas><div onclick="OAP()" style="cursor:pointer;background:#fff;color:#1a4a10;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:700;border:2px solid #4caf50">+ Planta</div></div></div>`;const main=document.getElementById('MAIN');main.innerHTML=`<div style="background:var(--card);border:1.5px solid var(--cb);border-radius:14px;margin:10px 12px 8px;padding:10px 14px;overflow:visible"><div style="font-size:11px;color:#4caf50;font-weight:600;margin-bottom:6px">📐 <span data-t="patchDim">Dimensiones</span></div><div style="display:flex;gap:8px;align-items:flex-end"><div style="flex:1"><div style="font-size:10px;color:var(--txt2);margin-bottom:3px;font-weight:600" data-t="width">Ancho</div><input class="dim-inp" id="DW" type="number" value="${Math.round(pW*gUF()*10)/10}" min="0.1" max="9999" step="0.1" onchange="ODC()"></div><span style="font-size:14px;color:var(--txt3);margin-bottom:10px;font-weight:500">×</span><div style="flex:1"><div style="font-size:10px;color:var(--txt2);margin-bottom:3px;font-weight:600" data-t="length">Largo</div><input class="dim-inp" id="DL" type="number" value="${Math.round(pL*gUF()*10)/10}" min="0.1" max="9999" step="0.1" onchange="ODC()"></div><div style="flex:1" class="unit-wrap"><div style="font-size:10px;color:var(--txt2);margin-bottom:3px;font-weight:600" data-t="unit">Unidad</div><div class="unit-trigger" onclick="TU()"><span id="UL">${cU}</span><span style="font-size:12px">▼</span></div><div id="UD" class="unit-dd"><div onclick="SU('ft')">ft</div><div onclick="SU('in')">in</div><div onclick="SU('m')">m</div><div onclick="SU('cm')">cm</div></div></div></div><div style="margin-top:6px;font-size:10px;color:var(--txt3);font-weight:500" id="GI">Cuadrícula: ${gC} × ${gR}</div></div><div class="ph" id="PH"><span id="PHT"></span></div><div style="margin:4px 12px 6px;border-radius:14px;border:1.5px solid var(--cb);overflow:hidden"><div style="display:flex;background:#183a0e;border-bottom:1px solid var(--cb)"><div style="width:28px;flex-shrink:0;border-right:1px solid rgba(80,160,80,.3)"></div><div id="TopR" style="flex:1;display:grid"></div></div><div style="display:flex"><div id="LeftR" style="width:28px;flex-shrink:0;border-right:1px solid rgba(80,160,80,.3);background:#183a0e"></div><div style="flex:1;position:relative"><canvas id="GV"></canvas><div id="CG" style="position:absolute;top:0;left:0;width:100%;height:100%;display:grid"></div></div></div></div><div style="display:flex;gap:8px;padding:0 12px 6px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--txt3)"><div style="width:10px;height:10px;background:rgba(80,160,80,.5);border-radius:3px"></div><span data-t="planted">Plantados</span></div><div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--txt3)"><div style="width:10px;height:10px;background:rgba(200,80,200,.3);border-radius:3px"></div><span data-t="pestGuardLbl">Guardianas</span></div></div><div style="background:var(--hint);border:1.5px solid var(--hintb);border-radius:12px;padding:8px 12px;margin:0 12px 8px;font-size:11px;color:var(--hintt);font-weight:500" data-t="tapCellHint">Toca planta para editar/eliminar.</div><div class="sec">Cosecha esperada</div><div id="EHV"></div><div class="sec" data-t="commonPests">Plagas comunes</div><div style="padding:0 12px 14px"><div style="background:var(--card);border:1.5px solid #d06060;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px"><div style="width:50px;height:50px;border-radius:10px;background:#ffeaea;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🐛</div><div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--txt)">Áfidos</div><div style="font-size:10px;color:var(--txt3)">Más común</div></div><div style="background:#300808;color:#f09090;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700">#1</div></div></div>`;aTx();bP();rEH();setTimeout(()=>dDay('dd-p'),50);}
 
 function rEH(){
   const con=document.getElementById('EHV');
@@ -494,7 +507,7 @@ function rEH(){
   }
   
   plants.forEach(p=>{
-    // Use the plant's harvestDays directly
+    // usar los días de cosecha de la planta directamente
     const harvestDate=new Date(p.plantedAt+p.harvestDays*MSD);
     const mm=harvestDate.getMonth()+1,dd=harvestDate.getDate();
     const dateStr=`${['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][mm-1]} ${dd}`;
@@ -508,15 +521,18 @@ function rEH(){
 }
 
 function ODC(){
-  const w=parseInt(document.getElementById('DW').value)||200;
-  const l=parseInt(document.getElementById('DL').value)||300;
-  pW=w;pL=l;
+  const w=parseFloat(document.getElementById('DW').value)||6;
+  const l=parseFloat(document.getElementById('DL').value)||10;
   
-  const cs=Math.max(25,Math.round(Math.min(w,l)/6));
-  const newGC=Math.max(2,Math.min(10,Math.round(w/cs)));
-  const newGR=Math.max(2,Math.min(8,Math.round(l/cs)));
+  // convertir de la unidad actual a cm para guardar internamente
+  pW=Math.round(toСm(w));
+  pL=Math.round(toСm(l));
   
-  // Save current plants with their positions
+  const cs=Math.max(25,Math.round(Math.min(pW,pL)/6));
+  const newGC=Math.max(2,Math.min(10,Math.round(pW/cs)));
+  const newGR=Math.max(2,Math.min(8,Math.round(pL/cs)));
+  
+  // guardar plantas actuales con sus posiciones
   const currentPlants=[];
   for(let r=0;r<gR;r++){
     for(let c=0;c<gC;c++){
@@ -526,19 +542,19 @@ function ODC(){
     }
   }
   
-  // Update grid dimensions
+  // actualizar dimensiones de la cuadrícula
   gC=newGC;
   gR=newGR;
   
-  // Create new empty grid
+  // crear cuadrícula vacía nueva
   pG=Array.from({length:gR},()=>Array(gC).fill(null));
   
-  // Restore plants that still fit in new grid
+  // restaurar plantas que caben en la cuadrícula nueva
   currentPlants.forEach(({id,r,c})=>{
     if(r<gR&&c<gC){
       pG[r][c]=id;
     }else{
-      // Plant doesn't fit in new grid, remove it
+      // la planta no cabe en la cuadrícula nueva, se elimina
       delete P[id];
     }
   });
@@ -617,9 +633,12 @@ function rCG(){
     }
 }
 
-function gUF(){return cU==='m'?.01:cU==='ft'?.0328:cU==='in'?.394:1;}
-function gRL(){return Array.from({length:gC},(_,i)=>(Math.round((i+1)*pW*gUF()*10/gC)/10)+cU);}
-function gLL(){return Array.from({length:gR},(_,i)=>(Math.round((i+1)*pL*gUF()*10/gR)/10));}
+// factores para convertir cm a la unidad actual
+function gUF(){return cU==='m'?0.01:cU==='ft'?0.03281:cU==='in'?0.3937:1;}
+// convertir unidad actual de vuelta a cm
+function toСm(v){return cU==='m'?v*100:cU==='ft'?v*30.48:cU==='in'?v*2.54:v;}
+function gRL(){return Array.from({length:gC},(_,i)=>Math.round(((i+1)*pW*gUF()/gC)*10)/10+cU);}
+function gLL(){return Array.from({length:gR},(_,i)=>Math.round(((i+1)*pL*gUF()/gR)*10)/10);}
 
 function rR(){
   const tr=document.getElementById('TopR');
@@ -634,7 +653,7 @@ function rR(){
   }
 }
 
-// Calendar tasks generator
+// generador de tareas del calendario
 function gCT(){
   const tasks=[];
   const today=new Date(),dd=today.getDate();
@@ -710,7 +729,7 @@ function rCal(){
   }
 }
 
-// Vegetables screen
+// pantalla de vegetales
 function rVS(){
   const hdr=document.getElementById('HDR');
   hdr.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between"><div style="flex:1"><div style="font-size:18px;font-weight:600;color:#fff">${showFlowers?'Flores':'Vegetales'}</div><div style="font-size:11px;color:rgba(255,255,255,.7)">Zone 12b · ${VL.length} vegetales, ${FL.length} flores</div></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">🔍</span><canvas id="dd-v" width="36" height="36"></canvas></div></div>`;
@@ -774,14 +793,14 @@ function oNw(v){
   document.getElementById('PIT').textContent=v.e+' '+(iS?v.s:v.n);
   const t=new Date(),p2=n=>String(n).padStart(2,'0');
   document.getElementById('FD').value=`${t.getFullYear()}-${p2(t.getMonth()+1)}-${p2(t.getDate())}`;
-  document.getElementById('FQ').value='1'; // Reset quantity to 1
+  document.getElementById('FQ').value='1'; // reiniciar cantidad a 1
   document.getElementById('FW').selectedIndex=1;
   document.getElementById('FS').selectedIndex=0;
   document.getElementById('FF').selectedIndex=2;
   document.getElementById('FN').value='';
   document.getElementById('RMB').style.display='none';
   const isPest=v.tp==='pest'||v.tp==='flower';
-  // Show/hide quantity field
+  // mostrar/ocultar campo de cantidad
   document.getElementById('QFR').style.display=isPest?'none':'block';
   document.getElementById('WFR').style.display=isPest?'none':'block';
   document.getElementById('SFR').style.display=isPest?'none':'block';
@@ -827,7 +846,7 @@ function oEx(p,r,c){
     document.getElementById('FFR').style.display='none';
   }
   
-  // Hide quantity field when editing
+  // ocultar cantidad al editar
   document.getElementById('QFR').style.display='none';
   document.getElementById('PGS').style.display='none';
   document.getElementById('FN').value='';
@@ -854,7 +873,7 @@ function SPI(){
   const dV=document.getElementById('FD').value,today=new Date(),pl=new Date(dV);
   const dA=Math.max(0,Math.floor((today-pl)/86400000));
   
-  // Editing existing plant
+  // editar planta existente
   if(pNP.ex&&pNP.id){
     const p=P[pNP.id];
     if(p&&!isPest){
@@ -864,7 +883,7 @@ function SPI(){
       p.lwt=Date.now()-dA*MSD;
       p.lft=Date.now()-dA*MSD;
       p.w=false;
-      // Keep plantedAt and harvestDays if they exist, otherwise set them
+      // conservar fecha de siembra y días de cosecha si existen
       if(!p.plantedAt)p.plantedAt=pl.getTime();
       if(!p.harvestDays){
         const vk=p.n.toLowerCase();
@@ -880,12 +899,12 @@ function SPI(){
     return;
   }
   
-  // Creating new plant(s) - get quantity
+  // crear planta(s) nueva(s) - obtener cantidad
   const qty=parseInt(document.getElementById('FQ').value)||1;
   const vk=pNP.n.toLowerCase();
   const vinfo=VG[vk];
   
-  // Create plants and add to queue
+  // crear plantas y añadir a la cola
   pQueue=[];
   for(let i=0;i<qty;i++){
     const id=vk.replace(/[^a-z]/g,'')+Date.now()%10000+i;
@@ -914,7 +933,7 @@ function SPI(){
     if(curScr==='garden')rSaved();
   }
   
-  // Start placing first plant
+  // empezar a colocar la primera planta
   pP=pQueue.shift();
   CPI();
   saveData();
@@ -927,9 +946,23 @@ function SPI(){
 function plc(r,c){
   if(!pP)return;
   if(!pG[r])pG[r]=Array(gC).fill(null);
+  
+  // verificar advertencia de rotación
+  const plant=P[pP.id];
+  if(plant){
+    const warning=checkRotationWarning(r,c,plant.n);
+    if(warning){
+      if(!confirm(warning+'\n\n'+(iS?'¿Plantar de todas formas?':'Plant anyway?'))){
+        return; // no plantar si el usuario cancela
+      }
+    }
+    // registrar rotación
+    trackRotation(r,c,plant.n);
+  }
+  
   pG[r][c]=pP.id;
   
-  // Check if there are more plants in queue
+  // verificar si quedan plantas en la cola
   if(pQueue.length>0){
     pP=pQueue.shift();
     const remaining=pQueue.length;
@@ -939,7 +972,7 @@ function plc(r,c){
     if(curScr==='garden')rG();
     if(curScr==='patch')rEH();
   }else{
-    // No more plants, done placing
+    // no quedan plantas, terminó la colocación
     pP=null;
     document.getElementById('PH').style.display='none';
     saveData();
@@ -949,24 +982,180 @@ function plc(r,c){
   }
 }
 
-// Water logging
+// sistema de notificaciones
+async function requestNotifications(){
+  if(!('Notification' in window)){
+    alert(iS?'Tu navegador no soporta notificaciones':'Browser does not support notifications');
+    return false;
+  }
+  
+  if(Notification.permission==='granted'){
+    notificationsEnabled=true;
+    scheduleWateringNotifications();
+    return true;
+  }
+  
+  if(Notification.permission!=='denied'){
+    const permission=await Notification.requestPermission();
+    if(permission==='granted'){
+      notificationsEnabled=true;
+      scheduleWateringNotifications();
+      return true;
+    }
+  }
+  return false;
+}
+
+function scheduleWateringNotifications(){
+  if(!notificationsEnabled)return;
+  
+  // revisar cada hora qué plantas necesitan agua
+  setInterval(()=>{
+    Object.values(P).forEach(p=>{
+      if(p.tp==='pest'||p.tp==='flower')return;
+      if(isOD(p)){
+        new Notification('🌱 Huerto',{
+          body:`${p.e} ${iS?(p.ns||p.n):p.n} ${iS?'necesita agua!':'needs water!'}`,
+          icon:'/favicon.ico',
+          tag:p.id
+        });
+      }
+    });
+  },3600000); // revisar cada hora
+}
+
+// integración con API del clima de Puerto Rico
+async function fetchWeather(){
+  if(!weatherEnabled)return;
+  
+  try{
+    // usando OpenWeatherMap para San Juan, PR
+    const API_KEY='demo'; // reemplaza con tu propia key de openweathermap.org
+    const response=await fetch(`https://api.openweathermap.org/data/2.5/weather?q=San Juan,PR&appid=${API_KEY}&units=metric&lang=${iS?'es':'en'}`);
+    
+    if(!response.ok)throw new Error('Weather fetch failed');
+    
+    weatherData=await response.json();
+    updateWeatherDisplay();
+  }catch(e){
+    console.log('Weather unavailable:',e);
+    weatherData=null;
+  }
+}
+
+function updateWeatherDisplay(){
+  if(!weatherData||!weatherEnabled)return;
+  
+  const temp=Math.round(weatherData.main.temp);
+  const desc=weatherData.weather[0].description;
+  const rain=weatherData.rain?weatherData.rain['1h']||0:0;
+  
+  // mostrar clima en el header si está disponible
+  const weatherEl=document.getElementById('weather-display');
+  if(weatherEl){
+    weatherEl.textContent=`${temp}°C ${desc}${rain>0?' 🌧️':''}`;
+  }
+}
+
+// rastreo de rotación de cultivos
+function trackRotation(r,c,plantName){
+  if(!rotationEnabled)return;
+  
+  const key=`${r}-${c}`;
+  if(!rotationHistory[key])rotationHistory[key]=[];
+  
+  const plantFamily=getPlantFamily(plantName);
+  rotationHistory[key].push({
+    plant:plantName,
+    family:plantFamily,
+    date:Date.now()
+  });
+  
+  // guardar solo las últimas 5 siembras
+  if(rotationHistory[key].length>5){
+    rotationHistory[key]=rotationHistory[key].slice(-5);
+  }
+  
+  saveData();
+}
+
+function getPlantFamily(plantName){
+  const families={
+    tomato:'solanaceae',potato:'solanaceae',pepper:'solanaceae',eggplant:'solanaceae',chilli:'solanaceae',
+    bean:'legume',pea:'legume',peanut:'legume',
+    carrot:'apiaceae',
+    lettuce:'asteraceae',
+    corn:'poaceae',
+    squash:'cucurbitaceae',pumpkin:'cucurbitaceae',cucumber:'cucurbitaceae',chayote:'cucurbitaceae'
+  };
+  return families[plantName.toLowerCase()]||'other';
+}
+
+function checkRotationWarning(r,c,plantName){
+  if(!rotationEnabled)return null;
+  
+  const key=`${r}-${c}`;
+  const history=rotationHistory[key]||[];
+  const newFamily=getPlantFamily(plantName);
+  
+  // verificar las últimas 2 siembras
+  const recent=history.slice(-2);
+  for(let i=0;i<recent.length;i++){
+    if(recent[i].family===newFamily&&newFamily!=='other'){
+      return iS?`⚠️ Misma familia sembrada aquí recientemente (${recent[i].plant}). Considera rotar.`:`⚠️ Same family planted here recently (${recent[i].plant}). Consider rotating.`;
+    }
+  }
+  return null;
+}
 function doW(id){const p=P[id];if(!p||p.w||p.tp==='pest'||p.tp==='flower')return;p.w=true;p.lwt=Date.now();const wb=document.getElementById('wb-'+id),ub=document.getElementById('ub-'+id),lbl=document.getElementById('wl-'+id),card=document.getElementById('gc-'+id);if(wb)wb.style.display='none';if(ub)ub.style.display='flex';if(card)card.style.borderColor='var(--cb)';dWI('wi-'+id,true);if(lbl){lbl.style.color='#4caf50';lbl.textContent=tx('wn');}saveData();clearInterval(wT[id]);let m=0;wT[id]=setInterval(()=>{m++;const l=document.getElementById('wl-'+id);if(l)l.textContent=`${iS?'Regado hace':'Watered'} ${m<60?m+'m':Math.floor(m/60)+'h'} ${iS?'':'ago'}`;},60000);const cyc=p.wE*MSD;setTimeout(()=>{if(p.w){p.w=false;clearInterval(wT[id]);saveData();const w2=document.getElementById('wb-'+id),u2=document.getElementById('ub-'+id);if(w2){w2.style.display='flex';w2.onclick=()=>doW(id);}if(u2)u2.style.display='none';dWI('wi-'+id,false);const l2=document.getElementById('wl-'+id);if(l2){l2.style.color='#b06000';l2.textContent=tx('nw');}}},cyc);}
 
 function unW(id){const p=P[id];if(!p||!p.w||p.tp==='pest'||p.tp==='flower')return;clearInterval(wT[id]);p.w=false;p.lwt=Date.now()-p.wE*MSD*.95;const wb=document.getElementById('wb-'+id),ub=document.getElementById('ub-'+id),lbl=document.getElementById('wl-'+id);if(wb){wb.style.display='flex';wb.onclick=()=>doW(id);}if(ub)ub.style.display='none';dWI('wi-'+id,false);if(lbl){lbl.style.color='#b06000';lbl.textContent=tx('nw');}saveData();}
 
-// Settings toggles
+// toggles de configuración
+async function toggleNotifications(){
+  if(!notificationsEnabled){
+    const granted=await requestNotifications();
+    if(granted){
+      notificationsEnabled=true;
+      saveData();
+      rGS();
+    }
+  }else{
+    notificationsEnabled=false;
+    saveData();
+    rGS();
+  }
+}
+
+async function toggleWeather(){
+  weatherEnabled=!weatherEnabled;
+  if(weatherEnabled){
+    await fetchWeather();
+    // actualizar clima cada 30 minutos
+    setInterval(fetchWeather,1800000);
+  }
+  saveData();
+  rGS();
+}
+
+function toggleRotation(){
+  rotationEnabled=!rotationEnabled;
+  saveData();
+  rGS();
+}
+
 function TT(){tC=!tC;document.getElementById('TB').textContent=tC?'°C':'°F';saveData();}
 function TU(){const dd=document.getElementById('UD');dd.style.display=dd.style.display==='none'?'block':'none';}
 function SU(u){cU=u;document.getElementById('UL').textContent=u;document.getElementById('UD').style.display='none';const f=gUF();document.getElementById('DW').value=Math.round(pW*f*10)/10;document.getElementById('DL').value=Math.round(pL*f*10)/10;document.getElementById('GI').textContent=`Cuadrícula: ${gC} × ${gR}`;saveData();rR();bP();}
 function TN(){iN=!iN;document.getElementById('app').classList.toggle('night',iN);const nb=document.getElementById('NB');nb.style.background=iN?'#c8a000':'#161628';nb.style.color=iN?'#1a1a00':'#b0b0cc';nb.textContent=iN?`☀️ ${tx('dm')}`:`🌙 ${tx('nm')}`;saveData();if(curScr==='patch')bP();if(curScr==='garden')rSaved();if(curScr==='cal')rCS();if(curScr==='veg')rVL();}
 function TL(){iS=!iS;document.getElementById('LB').textContent=iS?'🌐 English':'🌐 Español';const nb=document.getElementById('NB');nb.textContent=iN?`☀️ ${tx('dm')}`:`🌙 ${tx('nm')}`;saveData();aTx();if(curScr==='garden'){rG();rSaved();}if(curScr==='veg')rVL();}
 
-// Close unit dropdown when clicking outside
+// cerrar dropdown de unidad al hacer clic afuera
 document.addEventListener('click',e=>{if(!e.target.closest('.unit-wrap'))document.getElementById('UD').style.display='none';});
 
 function updateTime(){const now=new Date();document.getElementById('statusTime').textContent=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false});}
 
-// Animation loop for dials and indicators
+// loop de animación para discos e indicadores
 function loop(){
   ['dd-g','dd-p','dd-c','dd-v'].forEach(id=>{if(document.getElementById(id))dDay(id);});
   Object.keys(P).forEach(id=>{
@@ -991,7 +1180,7 @@ function init(){
   loop();
   updateTime();
   setInterval(updateTime,60000);
-  // Initialize Lucide icons
+  // inicializar íconos de Lucide
   if(typeof lucide!=='undefined')lucide.createIcons();
 }
 

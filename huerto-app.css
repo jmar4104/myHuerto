@@ -1,4 +1,4 @@
-/* basic resets */
+/* resets básicos */
 *{
   box-sizing:border-box;
   margin:0;
@@ -14,7 +14,7 @@ body{
   background:#000;
 }
 
-/* color theme - day mode */
+/* colores - modo día */
 :root{
   --bg:#f4f8f1;
   --card:#fff;
@@ -33,7 +33,7 @@ body{
   --hintt:#27500a;
 }
 
-/* night mode colors */
+/* colores modo noche */
 .night{
   --bg:#111a0e;
   --card:#1a2614;
@@ -62,7 +62,7 @@ body{
   overflow:hidden;
 }
 
-/* status bar at top */
+/* barra de estado arriba */
 .sb{
   background:var(--hdrd);
   height:44px;
@@ -85,16 +85,16 @@ body{
   flex-shrink:0;
 }
 
-/* main scrollable area */
+/* área principal con scroll */
 .scr{
   overflow-y:auto;
   overflow-x:hidden;
   flex:1;
   position:relative;
-  -webkit-overflow-scrolling:touch; /* smooth scroll on ios */
+  -webkit-overflow-scrolling:touch; /* scroll suave en ios */
 }
 
-/* bottom navigation */
+/* navegación inferior */
 .nav{
   height:70px;
   background:var(--nav);
@@ -149,7 +149,7 @@ body{
   letter-spacing:.5px;
 }
 
-/* plant cards */
+/* tarjetas de plantas */
 .pc{
   background:var(--card);
   border-radius:14px;
@@ -159,7 +159,7 @@ body{
   transition:background .3s,border-color .3s;
 }
 
-/* modal overlay */
+/* fondo del modal */
 .mov{
   position:fixed;
   top:0;left:0;
@@ -192,7 +192,7 @@ body{
   justify-content:space-between;
 }
 
-/* vegetable grid in picker */
+/* cuadrícula de vegetales en el selector */
 .vg{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -217,7 +217,7 @@ body{
   transform:scale(.95);
 }
 
-/* form inputs */
+/* campos del formulario */
 .fr{margin-bottom:12px;}
 
 .fr label{
@@ -240,7 +240,7 @@ body{
   font-family:inherit;
 }
 
-/* buttons */
+/* botones */
 .bg{
   background:#2d5a1b;
   color:#fff;
@@ -309,7 +309,7 @@ body{
   font-family:inherit;
 }
 
-/* unit selector dropdown */
+/* dropdown selector de unidad */
 .unit-wrap{position:relative;}
 
 .unit-trigger{
@@ -358,7 +358,7 @@ body{
 
 .unit-dd div:last-child{border-bottom:none;}
 
-/* vegetable row in catalog */
+/* fila de vegetal en el catálogo */
 .vr{
   background:var(--card);
   border:1.5px solid var(--cb);
@@ -374,7 +374,7 @@ body{
 
 .vr:active{background:var(--hint);}
 
-/* slide-in detail panel */
+/* panel de detalle deslizable */
 .slide{
   position:fixed;
   top:0;
@@ -419,7 +419,7 @@ body{
   letter-spacing:.5px;
 }
 
-/* care method grid */
+/* cuadrícula de métodos de cuidado */
 .cgrid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -494,7 +494,7 @@ body{
   color:#fff;
 }
 
-/* hour pills for shade schedule */
+/* pastillas de hora para el horario de sombra */
 .todpill{
   display:inline-block;
   background:rgba(240,160,32,.15);
@@ -567,7 +567,7 @@ body{
   font-weight:700;
 }
 
-/* container options */
+/* opciones de contenedor */
 .contgrid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -617,7 +617,7 @@ body{
   line-height:1.2;
 }
 
-/* challenge indicators */
+/* indicadores de retos */
 .chgrid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -656,7 +656,7 @@ body{
   font-weight:700;
 }
 
-/* task rows */
+/* filas de tareas */
 .trow{
   background:var(--card);
   border:1.5px solid var(--cb);
@@ -668,7 +668,7 @@ body{
   gap:10px;
 }
 
-/* progress bar for harvest */
+/* barra de progreso para cosecha */
 .pwbar{
   height:24px;
   background:#e8e8e8;
@@ -683,7 +683,7 @@ body{
   border-radius:8px;
 }
 
-/* plant type toggle */
+/* toggle de tipo de planta */
 .ptog{
   display:flex;
   gap:6px;

@@ -1,120 +1,162 @@
-# Huerto 🌱
+# Huerto 
 
-app de jardinería para puerto rico (zona 12b)
+aplicación de jardinería para puerto rico (zona 12b)
 
-hice esto porque las apps normales no funcionan bien en el trópico. tiene 47 plantas nativas americanas y guarda todo local.
+hice esto porque las apps que encontré no funcionan bien en el trópico. tiene 47 plantas nativas americanas y guarda todo de forma local sin necesitar servidor.
 
 ## qué hace
 
-- lleva cuenta de 23 vegetales y 24 flores
-- te dice cuándo regar con unos discos que hice
-- calendario de tareas
-- funciona en el celular, guarda todo en el browser
+- rastrea 23 vegetales y 24 flores (todas nativas de las américas)
+- te avisa cuándo regar con unos indicadores visuales en forma de disco
+- calendario automático de tareas de riego
+- funciona en el celular, todo se guarda en el navegador
 - español/inglés
-- modo oscuro
+- modo nocturno
+- notificaciones de riego
+- clima de puerto rico en tiempo real
+- alertas de rotación de cultivos
 
-## cómo usar
+## cómo usarla
 
-descarga los 3 archivos (index.html, huerto-app.css, huerto-app.js) a la misma carpeta y abre index.html
+descarga los 3 archivos (index.html, huerto-app.css, huerto-app.js) a la misma carpeta y abre el index.html en tu navegador.
 
-### en el cel
+### instalación en el celular
 
-**iphone:** safari → compartir → "añadir a pantalla de inicio"
+**iphone:** abre en safari → compartir → "añadir a pantalla de inicio"
 
-**android:** chrome → menú → "añadir a pantalla de inicio"
+**android:** abre en chrome → menú (tres puntos) → "añadir a pantalla de inicio"
 
-ya está, ahora tienes un ícono de app
+listo, ahora tienes un ícono de app en tu pantalla.
 
 ## las plantas
 
 ### vegetales (23)
-tomate, papa, batata, maíz, frijol, calabaza, pumpkin, pimiento, chile, aguacate, yuca, quinoa, amaranto, tomatillo, jícama, chayote, nopal, aguaturma, tepary bean, haba lima, maní, papaya, parcha
+tomate, papa, batata, maíz, frijol, calabaza, pumpkin, pimiento, chile, aguacate, yuca, quinoa, amaranto, tomatillo, jícama, chayote, nopal, aguaturma, frijol tepary, haba lima, maní, papaya, parcha
 
 ### flores (24)
-girasol, rosa, maravilla, hibisco, zinnia, cosmos, dalia, black-eyed susan, coneflower, lupino, columbine, bee balm, amapola, pasionaria, campanilla, petunia, capuchina, verbena, salvia, aster, blanket flower, coral bells, trumpet vine, cardinal flower
+girasol, rosa, maravilla, hibisco, zinnia, cosmos, dalia, black-eyed susan, coneflower, lupino, columbine, bee balm, amapola de california, pasionaria, campanilla, petunia, capuchina, verbena, salvia, aster, blanket flower, coral bells, trumpet vine, cardinal flower
 
-la info está toda ahí - cuándo sembrar, temperaturas, dificultad, etc
+toda la información está incluida - tiempos de siembra, rangos de temperatura, nivel de dificultad, etc.
 
-## cómo guarda
+## cómo guarda los datos
 
-usa localStorage del browser. se guarda automáticamente cuando:
+usa localStorage del navegador. todo se guarda automáticamente cuando:
 - plantas algo
-- riegas
+- riegas una planta
 - guardas favoritos
-- cambias settings
+- cambias la configuración
 
-**importante:** no uses modo incógnito o se borra todo cuando cierras la pestaña
+**importante:** no uses modo incógnito porque perderás todos los datos al cerrar la pestaña.
 
 ## las pantallas
 
-**mi huerto** - todas tus plantas, estado del agua, los discos
+**mi huerto** - muestra todas tus plantas, estado del riego, indicadores visuales
 
-**mi jardín** - cuadrícula de tu patio real, toca las celdas para añadir plantas
+**mi jardín** - vista de cuadrícula de tu jardín real, toca las celdas para añadir plantas
 
-**calendario** - genera las tareas de riego automáticamente
+**calendario** - genera automáticamente las tareas de riego para la semana
 
-**vegetales** - todas las 47 plantas, toca la estrella para guardar
+**vegetales** - explora las 47 plantas disponibles, toca la estrella para guardar favoritas
+
+## funciones nuevas
+
+### notificaciones de riego 
+activa las notificaciones y la app te avisará cuando tus plantas necesiten agua. revisa cada hora y te manda una alerta directamente al navegador.
+
+### clima de puerto rico 
+conecta con la API del clima para mostrar las condiciones actuales en san juan. útil para saber si va a llover y ajustar el riego. necesitas tu propia API key gratuita de openweathermap.
+
+### rotación de cultivos 🔄
+la app rastrea qué plantas has sembrado en cada celda y te avisa si estás poniendo la misma familia en el mismo sitio (por ejemplo, tomate después de pimiento - ambos son solanáceas). esto ayuda a mantener el suelo saludable.
 
 ## sobre zona 12b
 
-eso es puerto rico. clima tropical, sin heladas, siembras todo el año pero:
-- hace mucho calor (las plantas necesitan sombra al mediodía a veces)
-- humedad alta = hongos
-- pero puedes cultivar todo el año
+puerto rico tiene clima tropical, sin heladas, puedes sembrar todo el año pero hay retos:
+- el calor intenso (muchas plantas necesitan sombra en el mediodía)
+- humedad alta que favorece hongos
+- pero la ventaja es que cultivas durante todo el año
 
-## si algo falla
+## si algo no funciona
 
-**pantalla en blanco:** asegúrate que los 3 archivos estén juntos
+**pantalla en blanco:** verifica que los 3 archivos estén en la misma carpeta
 
-**plantas desaparecieron:** probablemente usaste modo incógnito o borraste datos del browser
+**plantas desaparecieron:** probablemente usaste modo incógnito o borraste los datos del navegador
 
-**estrellas no aparecen:** ya lo arreglé, descarga el archivo js nuevo
+**las notificaciones no llegan:** asegúrate de haber dado permiso en el navegador
 
-## estructura
+**el clima no carga:** necesitas añadir tu API key de openweathermap en el código
+
+## estructura de archivos
 
 ```
-carpeta/
-  index.html       
-  huerto-app.css   
-  huerto-app.js    
+tu-carpeta/
+  index.html       - la interfaz
+  huerto-app.css   - los estilos
+  huerto-app.js    - toda la lógica
 ```
 
-no hay database, no hay server, no hay npm. solo html/css/js
+sin base de datos, sin servidor, sin dependencias npm. solo html, css y javascript.
 
 ## lo técnico
 
-- los íconos son svg inline o emojis
-- los discos usan canvas
-- localStorage para guardar
-- funciona offline
-- como 60kb total
-- usa lucide icons para la navegación
+- los íconos son svg inline, emojis, o de lucide icons
+- los indicadores circulares usan canvas
+- localStorage para persistencia de datos
+- funciona completamente offline (excepto clima y notificaciones)
+- aproximadamente 70kb en total
+- usa la API de notificaciones del navegador
+- conecta con openweathermap para datos del clima
+- sistema de rotación basado en familias de plantas
 
-la estrella de favorito (★) se pone verde cuando guardas algo. antes usaba emoji bookmarks pero la estrella se ve mejor.
+hice el marcador de favoritos como una estrella (★) que se pone verde al guardar. antes usaba emojis pero la estrella se ve más limpia.
 
-## tips zona 12b
+## consejos para zona 12b
 
-tomates y pimientos van bien aquí. lechuga necesita sombra. cosas de clima frío son complicadas.
+tomates, pimientos y cosas tropicales van muy bien aquí. la lechuga necesita sombra parcial. cualquier planta que prefiera clima frío va a sufrir un poco.
 
-la app tiene recomendaciones de sombra - mira las horas en los detalles de cada planta.
+la app incluye recomendaciones de sombra - busca el indicador de horas en los detalles de cada planta.
+
+## configuración del clima
+
+para usar la función del clima:
+
+1. crea cuenta gratis en https://openweathermap.org
+2. copia tu API key
+3. abre huerto-app.js
+4. busca `const API_KEY='demo'`
+5. reemplázala con tu key: `const API_KEY='tu_key_aqui'`
 
 ## licencia
 
-gratis, úsala como quieras. la hice para mí pero la comparto por si ayuda.
+gratis y de código abierto. la hice para mi jardín pero la comparto por si le sirve a alguien más.
 
-si le añades cosas o arreglas bugs está bien compartir pero no es obligatorio.
+si añades plantas o corriges errores está bien que compartas los cambios, pero no es obligatorio.
 
-## notas
+## notas de desarrollo
 
-- empecé esto porque se me olvidaba cuándo regaba
-- el calendario tal vez es mucho pero bueno
-- tenía planeadas más funciones pero lo mantuve simple
-- puede que añada más guías después
-- nueva: ahora puedes sembrar varias de la misma planta (ejemplo: 5 tomates) y las colocas una por una
+- empecé esto porque siempre se me olvidaba cuándo había regado
+- el calendario probablemente es más de lo necesario pero funciona
+- tenía planeadas más funciones pero preferí mantenerlo simple
+- tal vez añada guías de cultivo más detalladas en el futuro
+- ahora puedes sembrar varias plantas del mismo tipo (ejemplo: 5 tomates) y colocarlas una por una en el jardín
 
-feliz jardinería 🌿
+## cosas que quiero añadir
 
-pd: si no estás en PR igual sirve pero las recomendaciones son para zona 12b
+- **notificaciones push** para recordatorios de riego  implementado
+- **integración con api del clima de PR** para ajustar el riego según la lluvia  implementado
+- **recomendaciones de rotación de cultivos** para no sembrar lo mismo en el mismo sitio  implementado
+- ajustar automáticamente el calendario de riego basado en la lluvia prevista
+- notificaciones más inteligentes (una sola vez al día)
+- más familias de plantas para el sistema de rotación
+- gráficas del historial de riego
+
+si quieres ayudar con alguna de estas funciones o proponer otras nuevas, adelante.
+
+feliz jardinería 
+
+---
+
+**nota:** si no estás en puerto rico igual puedes usar la app, pero las recomendaciones de plantas y clima están optimizadas para zona 12b.
 
 
 
