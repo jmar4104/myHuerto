@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2d5a1b">
+<title>Huerto - Garden Planner</title>
+<link rel="stylesheet" href="huerto-app.css">
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div id="app">
+  <div class="sb">
+    <span id="statusTime">9:41</span>
+    <span>◼◼◼</span>
+  </div>
+  <div class="hdr" id="HDR"></div>
+  <div class="scr" id="SCR">
+    <div id="MAIN"></div>
+    <div id="SLIDE" class="slide"></div>
+  </div>
+  <div class="nav">
+    <div class="ni" id="nav-garden" onclick="goTo('garden')">
+      <i data-lucide="sprout"></i>
+      <span data-t="navGarden">Mi Huerto</span>
+    </div>
+    <div class="ni" id="nav-patch" onclick="goTo('patch')">
+      <i data-lucide="layout-grid"></i>
+      <span data-t="navPatch">Jardín</span>
+    </div>
+    <div class="ni" id="nav-cal" onclick="goTo('cal')">
+      <i data-lucide="calendar"></i>
+      <span data-t="navCal">Calendario</span>
+    </div>
+    <div class="ni" id="nav-veg" onclick="goTo('veg')">
+      <i data-lucide="leaf"></i>
+      <span data-t="navVeggies">Vegetales</span>
+    </div>
+  </div>
+      <span data-t="navVeggies">Vegetales</span>
+    </div>
+  </div>
+</div>
+
+<div id="APM" class="mov" style="display:none">
+  <div class="mb">
+    <div class="mt">
+      <span data-t="addPlantTitle">Añadir planta</span>
+      <span onclick="CAP()" style="cursor:pointer;font-size:24px;color:var(--txt3)">×</span>
+    </div>
+    <div class="ptog">
+      <button id="vegBtn" class="on" onclick="pickerType='veg';rPicker()">🥕 Vegetales</button>
+      <button id="flwBtn" onclick="pickerType='flower';rPicker()">🌸 Flores</button>
+    </div>
+    <div class="vg" id="VP"></div>
+  </div>
+</div>
+
+<div id="PIM" class="mov" style="display:none">
+  <div class="mb">
+    <div class="mt">
+      <span id="PIT">🍅</span>
+      <span onclick="CPI()" style="cursor:pointer;font-size:24px;color:var(--txt3)">×</span>
+    </div>
+    <div style="font-size:12px;color:#4caf50;margin-bottom:12px;font-weight:500" data-t="fillDetails">Completa datos</div>
+    <div class="fr">
+      <label data-t="datePlanted">Fecha siembra</label>
+      <input type="date" id="FD">
+    </div>
+    <div class="fr" id="QFR">
+      <label data-t="quantity">Cantidad</label>
+      <input type="number" id="FQ" min="1" max="20" value="1" style="width:100%;background:var(--inp);border:1.5px solid var(--inpb);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--txt);outline:none;font-family:inherit">
+    </div>
+    <div class="fr" id="WFR">
+      <label data-t="waterFreq">Riego</label>
+      <select id="FW">
+        <option>Cada día</option>
+        <option selected>Cada 2 días</option>
+        <option>Cada 3 días</option>
+        <option>Cada 4 días</option>
+      </select>
+    </div>
+    <div class="fr" id="SFR">
+      <label data-t="sunlight">Luz solar</label>
+      <select id="FS">
+        <option selected>Sol completo (6–8h)</option>
+        <option>Sol parcial (4–6h)</option>
+        <option>Sombra parcial (2–4h)</option>
+        <option>Sombra completa</option>
+      </select>
+    </div>
+    <div class="fr" id="FFR">
+      <label data-t="feedSched">Fertilización</label>
+      <select id="FF">
+        <option>Semanal</option>
+        <option>Cada 2 semanas</option>
+        <option selected>Mensual</option>
+        <option>Cada 6 semanas</option>
+      </select>
+    </div>
+    <div class="fr">
+      <label data-t="notesLbl">Notas</label>
+      <input type="text" id="FN" placeholder="opcional">
+    </div>
+    <div id="PGS" style="display:none;background:var(--hint);border:1.5px solid var(--hintb);border-radius:12px;padding:8px 12px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--hintt);font-weight:600;margin-bottom:6px">🛡️ Guardianas recomendadas</div>
+      <div id="PGL" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <button class="bg" onclick="SPI()">Guardar y plantar</button>
+    <button class="brd" id="RMB" onclick="RP()" style="display:none">🗑 Eliminar</button>
+    <button class="bgh" onclick="CPI()">Cancelar</button>
+  </div>
+</div>
+
+<script src="huerto-app.js"></script>
+
+</body>
+</html>
